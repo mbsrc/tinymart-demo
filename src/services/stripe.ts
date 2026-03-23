@@ -1,5 +1,14 @@
+import Stripe from "stripe"
+import { config } from "../config/index.js"
+import { AppError } from "../types/index.js"
+import { logger } from "../utils/logger.js"
+
+const stripe = new Stripe(config.stripeSecretKey)
+
+const PRE_AUTH_AMOUNT_CENTS = 5000
+
 export interface PreAuthResult {
-  paymentIntentId: string | null
+  paymentIntentId: string
   customerId: string | null
 }
 
@@ -9,21 +18,72 @@ export interface CaptureResult {
 }
 
 export async function createPreAuth(
-  _paymentMethodId: string | null,
-  _amountCents?: number,
+  paymentMethodId: string,
+  amountCents?: number,
 ): Promise<PreAuthResult> {
-  // V1 stub — replaced with real Stripe in step 5
-  return { paymentIntentId: null, customerId: null }
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountCents ?? PRE_AUTH_AMOUNT_CENTS,
+      currency: "usd",
+      payment_method: paymentMethodId,
+      capture_method: "manual",
+      confirm: true,
+      automatic_payment_methods: { enabled: true, allow_redirects: "never" },
+    })
+    return {
+      paymentIntentId: paymentIntent.id,
+      customerId: typeof paymentIntent.customer === "string" ? paymentIntent.customer : null,
+    }
+  } catch (error) {
+    throw mapStripeError(error)
+  }
 }
 
 export async function capturePayment(
-  _paymentIntentId: string | null,
-  _amountCents: number,
+  paymentIntentId: string,
+  amountCents: number,
 ): Promise<CaptureResult> {
-  // V1 stub — always succeeds
-  return { chargeId: null, status: "succeeded" }
+  try {
+    const paymentIntent = await stripe.paymentIntents.capture(paymentIntentId, {
+      amount_to_capture: amountCents,
+    })
+    const chargeId = paymentIntent.latest_charge
+    return {
+      chargeId: typeof chargeId === "string" ? chargeId : null,
+      status: "succeeded",
+    }
+  } catch (error) {
+    throw mapStripeError(error)
+  }
 }
 
-export async function cancelPreAuth(_paymentIntentId: string | null): Promise<void> {
-  // V1 stub — no-op
+export async function cancelPreAuth(paymentIntentId: string): Promise<void> {
+  try {
+    await stripe.paymentIntents.cancel(paymentIntentId)
+  } catch (error) {
+    logger.warn("Failed to cancel PaymentIntent", {
+      paymentIntentId,
+      error: error instanceof Error ? error.message : String(error),
+    })
+  }
+}
+
+export function mapStripeError(error: unknown): AppError {
+  if (error instanceof Stripe.errors.StripeCardError) {
+    return new AppError(422, "CARD_DECLINED", error.message)
+  }
+  if (error instanceof Stripe.errors.StripeInvalidRequestError) {
+    return new AppError(400, "STRIPE_INVALID_REQUEST", error.message)
+  }
+  if (
+    error instanceof Stripe.errors.StripeAPIError ||
+    error instanceof Stripe.errors.StripeConnectionError
+  ) {
+    return new AppError(502, "STRIPE_UNAVAILABLE", "Payment service temporarily unavailable")
+  }
+  if (error instanceof Stripe.errors.StripeError) {
+    return new AppError(500, "STRIPE_ERROR", error.message)
+  }
+  if (error instanceof AppError) return error
+  return new AppError(500, "INTERNAL_ERROR", "An unexpected payment error occurred")
 }

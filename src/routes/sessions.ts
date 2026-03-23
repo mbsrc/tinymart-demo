@@ -33,12 +33,19 @@ router.post(
       throw new AppError(422, "STORE_UNAVAILABLE", "Store is not currently accepting sessions")
     }
 
-    const preAuth = await createPreAuth(stripe_payment_method_id ?? null)
+    let paymentIntentId: string | null = null
+    let customerId: string | null = null
+
+    if (stripe_payment_method_id) {
+      const preAuth = await createPreAuth(stripe_payment_method_id)
+      paymentIntentId = preAuth.paymentIntentId
+      customerId = preAuth.customerId
+    }
 
     const session = await Session.create({
       store_id,
-      stripe_customer_id: preAuth.customerId,
-      stripe_payment_intent_id: preAuth.paymentIntentId,
+      stripe_customer_id: customerId,
+      stripe_payment_intent_id: paymentIntentId,
       idempotency_key: null,
     })
 
@@ -112,7 +119,9 @@ router.post(
     const cartItems = reconcileCart(session.SessionItems ?? [])
 
     if (cartItems.length === 0) {
-      await cancelPreAuth(session.stripe_payment_intent_id)
+      if (session.stripe_payment_intent_id) {
+        await cancelPreAuth(session.stripe_payment_intent_id)
+      }
       await session.update({ status: "closed", closed_at: new Date() })
       res.json(
         envelope({ id: session.id, status: "closed", total_cents: 0, items: [] }, buildMeta(req)),
@@ -142,7 +151,29 @@ router.post(
       }
     })
 
-    const captureResult = await capturePayment(session.stripe_payment_intent_id, totalCents)
+    let chargeId: string | null = null
+    let chargeStatus: "succeeded" | "failed" = "succeeded"
+
+    if (session.stripe_payment_intent_id) {
+      try {
+        const captureResult = await capturePayment(session.stripe_payment_intent_id, totalCents)
+        chargeId = captureResult.chargeId
+        chargeStatus = captureResult.status
+      } catch (error) {
+        chargeStatus = "failed"
+        const now = new Date()
+        await Transaction.create({
+          session_id: sessionId,
+          store_id: session.store_id,
+          total_cents: totalCents,
+          stripe_charge_id: null,
+          idempotency_key: null,
+          status: "failed",
+        })
+        await session.update({ status: "failed", closed_at: now })
+        throw error
+      }
+    }
 
     const now = new Date()
     const txn = await sequelize.transaction(async (t) => {
@@ -159,9 +190,9 @@ router.post(
           session_id: sessionId,
           store_id: session.store_id,
           total_cents: totalCents,
-          stripe_charge_id: captureResult.chargeId,
+          stripe_charge_id: chargeId,
           idempotency_key: null,
-          status: captureResult.status,
+          status: chargeStatus,
         },
         { transaction: t },
       )
