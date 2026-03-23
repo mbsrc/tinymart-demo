@@ -13,9 +13,9 @@
     "test:watch": "vitest",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "db:migrate": "sequelize-cli db:migrate",
-    "db:migrate:undo": "sequelize-cli db:migrate:undo",
-    "db:seed": "sequelize-cli db:seed:all"
+    "db:migrate": "tsx node_modules/.bin/sequelize-cli db:migrate",
+    "db:migrate:undo": "tsx node_modules/.bin/sequelize-cli db:migrate:undo",
+    "db:seed": "tsx node_modules/.bin/sequelize-cli db:seed:all"
   },
   "dependencies": {
     "@logtail/node": "^0.5.2",
