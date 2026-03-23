@@ -1,4 +1,12 @@
+import type { Request } from "express"
 import type { ApiResponse, ErrorDetail, ResponseMeta } from "../types/index.js"
+
+export function buildMeta(req: Request): ResponseMeta {
+  return {
+    correlation_id: req.correlationId,
+    timestamp: new Date().toISOString(),
+  }
+}
 
 export function envelope<T>(data: T, meta: ResponseMeta): ApiResponse<T> {
   return {
