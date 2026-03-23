@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import request from "supertest"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { app } from "../src/app.js"
@@ -54,6 +55,7 @@ describe("Stores API", () => {
     const res = await request(app)
       .post("/api/stores")
       .set("x-api-key", apiKey)
+      .set("idempotency-key", randomUUID())
       .send({ name: "Test Store", location_name: "Downtown", address: "123 Main St" })
 
     expect(res.status).toBe(201)
@@ -64,7 +66,11 @@ describe("Stores API", () => {
   })
 
   it("POST /api/stores rejects missing name", async () => {
-    const res = await request(app).post("/api/stores").set("x-api-key", apiKey).send({})
+    const res = await request(app)
+      .post("/api/stores")
+      .set("x-api-key", apiKey)
+      .set("idempotency-key", randomUUID())
+      .send({})
 
     expect(res.status).toBe(400)
     expect(res.body.error.code).toBe("VALIDATION_ERROR")
@@ -80,6 +86,7 @@ describe("Stores API", () => {
     const res = await request(app)
       .post("/api/stores")
       .set("x-api-key", "bad-key")
+      .set("idempotency-key", randomUUID())
       .send({ name: "Bad Key" })
 
     expect(res.status).toBe(401)
@@ -90,6 +97,7 @@ describe("Stores API", () => {
     await request(app)
       .post("/api/stores")
       .set("x-api-key", otherApiKey)
+      .set("idempotency-key", randomUUID())
       .send({ name: "Other Store" })
 
     const res = await request(app).get("/api/stores").set("x-api-key", apiKey)
@@ -120,6 +128,7 @@ describe("Stores API", () => {
     const other = await request(app)
       .post("/api/stores")
       .set("x-api-key", otherApiKey)
+      .set("idempotency-key", randomUUID())
       .send({ name: "Secret Store" })
 
     const res = await request(app).get(`/api/stores/${other.body.data.id}`).set("x-api-key", apiKey)
@@ -131,6 +140,7 @@ describe("Stores API", () => {
     const res = await request(app)
       .post(`/api/stores/${storeId}/products`)
       .set("x-api-key", apiKey)
+      .set("idempotency-key", randomUUID())
       .send({ product_id: productId, quantity_on_hand: 10, low_stock_threshold: 3 })
 
     expect(res.status).toBe(201)
@@ -142,6 +152,7 @@ describe("Stores API", () => {
     const res = await request(app)
       .post(`/api/stores/${storeId}/products`)
       .set("x-api-key", apiKey)
+      .set("idempotency-key", randomUUID())
       .send({ product_id: productId })
 
     expect(res.status).toBe(409)
@@ -156,6 +167,7 @@ describe("Stores API", () => {
     const res = await request(app)
       .post(`/api/stores/${storeId}/products`)
       .set("x-api-key", apiKey)
+      .set("idempotency-key", randomUUID())
       .send({ product_id: otherProductId })
 
     expect(res.status).toBe(404)
@@ -166,6 +178,7 @@ describe("Stores API", () => {
     const res = await request(app)
       .patch(`/api/stores/${storeId}/products/${productId}`)
       .set("x-api-key", apiKey)
+      .set("idempotency-key", randomUUID())
       .send({ quantity_on_hand: 25 })
 
     expect(res.status).toBe(200)
@@ -176,6 +189,7 @@ describe("Stores API", () => {
     const res = await request(app)
       .patch(`/api/stores/${storeId}/products/00000000-0000-0000-0000-000000000000`)
       .set("x-api-key", apiKey)
+      .set("idempotency-key", randomUUID())
       .send({ quantity_on_hand: 5 })
 
     expect(res.status).toBe(404)

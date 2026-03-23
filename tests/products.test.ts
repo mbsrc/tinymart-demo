@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import request from "supertest"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { app } from "../src/app.js"
@@ -24,6 +25,7 @@ describe("Products API", () => {
     const res = await request(app)
       .post("/api/products")
       .set("x-api-key", apiKey)
+      .set("idempotency-key", randomUUID())
       .send({ name: "Water", sku: "WAT-001", price_cents: 199, category: "fridge" })
 
     expect(res.status).toBe(201)
@@ -36,6 +38,7 @@ describe("Products API", () => {
     const res = await request(app)
       .post("/api/products")
       .set("x-api-key", apiKey)
+      .set("idempotency-key", randomUUID())
       .send({ name: "Water Dupe", sku: "WAT-001", price_cents: 100, category: "fridge" })
 
     expect(res.status).toBe(409)
@@ -46,6 +49,7 @@ describe("Products API", () => {
     const res = await request(app)
       .post("/api/products")
       .set("x-api-key", apiKey)
+      .set("idempotency-key", randomUUID())
       .send({ name: "No SKU" })
 
     expect(res.status).toBe(400)
@@ -56,6 +60,7 @@ describe("Products API", () => {
     const res = await request(app)
       .post("/api/products")
       .set("x-api-key", apiKey)
+      .set("idempotency-key", randomUUID())
       .send({ name: "Bad", sku: "BAD-001", price_cents: 100, category: "invalid" })
 
     expect(res.status).toBe(400)
@@ -73,6 +78,7 @@ describe("Products API", () => {
     await request(app)
       .post("/api/products")
       .set("x-api-key", apiKey)
+      .set("idempotency-key", randomUUID())
       .send({ name: "Chips", sku: "CHP-001", price_cents: 249, category: "pantry" })
 
     const res = await request(app).get("/api/products?category=fridge").set("x-api-key", apiKey)
