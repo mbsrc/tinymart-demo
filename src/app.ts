@@ -2,6 +2,7 @@ import express from "express"
 import { authenticateOperator } from "./middleware/auth.js"
 import { correlationId } from "./middleware/correlationId.js"
 import { errorHandler } from "./middleware/errorHandler.js"
+import { idempotency } from "./middleware/idempotency.js"
 import { notFound } from "./middleware/notFound.js"
 import { requestLogger } from "./middleware/requestLogger.js"
 import { healthRouter } from "./routes/health.js"
@@ -28,8 +29,8 @@ app.use(healthRouter)
 // 6. Rate limiter (V2)
 
 // 7. API routes
-app.use("/api/stores", authenticateOperator, storesRouter)
-app.use("/api/products", authenticateOperator, productsRouter)
+app.use("/api/stores", authenticateOperator, idempotency, storesRouter)
+app.use("/api/products", authenticateOperator, idempotency, productsRouter)
 
 // 8. 404 handler (3-arg)
 app.use(notFound)

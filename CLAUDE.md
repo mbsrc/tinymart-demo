@@ -36,16 +36,15 @@ Backend-reliability demo targeting Micromart engineering interviewers.
 - Progress is tracked in `docs/progress.md`. Read it at the start of any multi-step task
 
 ### Git & PR Workflow
-- Branching Model: Use `develop` as the primary integration branch. Create feature branches from `develop` using the `feature/<name>` pattern.
-- Pull Requests: Target `develop` for standard feature PRs. 
-- Stacked Branches: When using stacked branches, always verify the base branch is set to the correct parent branch in the stack, not `main` or `develop`. Use `gh pr create --base <parent-branch>` to confirm the target.
+- Branching Model: Use `develop` as the primary integration branch. Create feature branches from `develop` using the `feature/<name>` pattern
+- Pull Requests: Target `develop` for standard feature PRs
 
 ### General Guidelines
 - When scaffolding projects or making large changes, present a concise plan first and wait for user approval before executing.
 - Prefer incremental steps over doing everything at once.
 
 ## Platform Notes
-- Use `sed -i '' ...` syntax for macOS (BSD sed). Do not use GNU sed syntax without the empty string argument.
+Use `sed -i '' ...` (BSD sed) syntax on macOS, not `sed -i ...` (GNU sed).
 
 ## Lessons Learned
 - **Docker PostgreSQL on port 5433** — Remapped from 5432 to avoid conflict with local PostgreSQL. Update `.env`, `tests/setup.ts`, and `docker-compose.yml` together.
