@@ -1,5 +1,7 @@
 # API Development Rules
-- All API responses follow the envelope: `{ success, data, error, meta }`
+- All API responses use the envelope: `{ success, data, error, meta }`
+- Build responses with `envelope()` / `errorEnvelope()` from `src/utils/envelope.ts`
+- Throw `AppError` from `src/types/index.ts` for all operational errors — never raw `Error`
 
 ## Express Middleware Order (critical)
 1. `trust proxy` — must precede rate limiter
@@ -11,5 +13,3 @@
 7. API routes
 8. 404 handler (3-arg)
 9. Error handler (4-arg) — always last
-
-

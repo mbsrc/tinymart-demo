@@ -19,7 +19,6 @@
 - No semicolons, 2-space indentation
 - No `any` types — strict TypeScript throughout
 - Error types must be explicitly defined, not generic Error throws
-- Database migrations must be reversible
 - NEVER hardcode secrets, API keys, or tokens in source code
 
 ## Planning

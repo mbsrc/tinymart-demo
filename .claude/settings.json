@@ -1,25 +1,11 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(docker compose *)",
-      "Bash(bunx biome *)"
-    ]
+    "allow": ["Bash(docker compose *)", "Bash(bunx biome *)"]
   },
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | jq -r '.tool_input.file_path // empty'); if [ -n \"$FILE\" ] && echo \"$FILE\" | grep -qE '\\.(ts|tsx|js|json)$'; then bunx biome check --write \"$FILE\" 2>/dev/null || true; fi"
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Bash",

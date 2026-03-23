@@ -1,4 +1,9 @@
 #!/bin/bash
+# PreToolUse hook — blocks destructive commands before Bash execution
+# Catches accidental database destruction, force pushes, and
+# production-targeting Heroku/database commands.
+# Exit 2 = block the tool call. Exit 0 = allow.
+
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 
