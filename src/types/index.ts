@@ -33,6 +33,7 @@ export class AppError extends Error {
 declare module "express-serve-static-core" {
   interface Request {
     correlationId: string
+    idempotencyKey?: string
     operator?: import("../models/Operator.js").Operator
   }
 }

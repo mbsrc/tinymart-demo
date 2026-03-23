@@ -9,7 +9,7 @@
 - [x] 6. Transaction history
 
 ## Phase 2: Make It Reliable (V2)
-- [ ] 7. Idempotency middleware
+- [x] 7. Idempotency middleware
 - [ ] 8. Circuit breaker + retry utilities
 - [ ] 9. Background jobs (pg-boss)
 - [ ] 10. Inventory event sourcing + optimistic locking
