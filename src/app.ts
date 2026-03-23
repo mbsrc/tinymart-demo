@@ -1,9 +1,12 @@
 import express from "express"
+import { authenticateOperator } from "./middleware/auth.js"
 import { correlationId } from "./middleware/correlationId.js"
 import { errorHandler } from "./middleware/errorHandler.js"
 import { notFound } from "./middleware/notFound.js"
 import { requestLogger } from "./middleware/requestLogger.js"
 import { healthRouter } from "./routes/health.js"
+import { productsRouter } from "./routes/products.js"
+import { storesRouter } from "./routes/stores.js"
 
 const app = express()
 
@@ -23,7 +26,10 @@ app.use(requestLogger)
 app.use(healthRouter)
 
 // 6. Rate limiter (V2)
-// 7. API routes (coming in later phases)
+
+// 7. API routes
+app.use("/api/stores", authenticateOperator, storesRouter)
+app.use("/api/products", authenticateOperator, productsRouter)
 
 // 8. 404 handler (3-arg)
 app.use(notFound)
