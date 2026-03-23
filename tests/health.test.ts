@@ -51,6 +51,14 @@ describe("Health endpoints", () => {
     expect(res.body.data.circuit_breakers.stripe.nextRetryTime).toBeNull()
   })
 
+  it("GET /health/detailed returns job queue status", async () => {
+    const res = await request(app).get("/health/detailed")
+
+    // pg-boss isn't started in tests, so status should be not_started
+    expect(res.body.data.job_queue).toBeDefined()
+    expect(res.body.data.job_queue.status).toBe("not_started")
+  })
+
   it("GET /health/detailed returns uptime and memory", async () => {
     const res = await request(app).get("/health/detailed")
 

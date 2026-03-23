@@ -11,7 +11,7 @@
 ## Phase 2: Make It Reliable (V2)
 - [x] 7. Idempotency middleware
 - [x] 8. Circuit breaker + retry utilities
-- [ ] 9. Background jobs (pg-boss)
+- [x] 9. Background jobs (pg-boss)
 - [ ] 10. Inventory event sourcing + optimistic locking
 - [ ] 11. Rate limiting
 - [x] 12. Structured logging + correlation IDs

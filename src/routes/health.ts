@@ -1,6 +1,7 @@
 import type { Request, Response } from "express"
 import { Router } from "express"
-import { sequelize } from "../models/index.js"
+import { getJobQueue } from "../jobs/queue.js"
+import { JobFailure, sequelize } from "../models/index.js"
 import { stripeCircuitBreaker } from "../services/stripe.js"
 import { envelope } from "../utils/envelope.js"
 
@@ -54,6 +55,23 @@ router.get("/health/detailed", async (req: Request, res: Response) => {
   const allHealthy = Object.values(checks).every((v) => v === "ok")
   const statusCode = allHealthy ? 200 : 503
 
+  const boss = getJobQueue()
+  let jobQueue: Record<string, unknown> = { status: "not_started" }
+
+  if (boss) {
+    try {
+      const queues = await boss.getQueues()
+      const deadLetterCount = await JobFailure.count()
+      jobQueue = {
+        status: "running",
+        queues: queues.map((q) => ({ name: q.name, policy: q.policy })),
+        dead_letter_count: deadLetterCount,
+      }
+    } catch {
+      jobQueue = { status: "error" }
+    }
+  }
+
   res.status(statusCode).json(
     envelope(
       {
@@ -62,6 +80,7 @@ router.get("/health/detailed", async (req: Request, res: Response) => {
         circuit_breakers: {
           stripe: stripeCircuitBreaker.getStatus(),
         },
+        job_queue: jobQueue,
         uptime: process.uptime(),
         memory: process.memoryUsage(),
       },
