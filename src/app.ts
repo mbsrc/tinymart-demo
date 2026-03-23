@@ -8,6 +8,7 @@ import { healthRouter } from "./routes/health.js"
 import { productsRouter } from "./routes/products.js"
 import { sessionsRouter } from "./routes/sessions.js"
 import { storesRouter } from "./routes/stores.js"
+import { transactionsRouter } from "./routes/transactions.js"
 
 const app = express()
 
@@ -32,6 +33,7 @@ app.use(healthRouter)
 app.use("/api/stores", authenticateOperator, storesRouter)
 app.use("/api/products", authenticateOperator, productsRouter)
 app.use("/api/sessions", sessionsRouter)
+app.use("/api/transactions", authenticateOperator, transactionsRouter)
 
 // 8. 404 handler (3-arg)
 app.use(notFound)

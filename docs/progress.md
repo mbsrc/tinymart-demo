@@ -3,10 +3,10 @@
 ## Phase 1: Get It Working (V1)
 - [x] 1. Project scaffolding (Express + TS + Sequelize)
 - [x] 2. Database schema + migrations + seed data
-- [ ] 3. Store management API + operator dashboard
-- [ ] 4. Shopping session API + kiosk frontend
-- [ ] 5. Stripe integration (test mode)
-- [ ] 6. Transaction history
+- [x] 3. Store management API + operator dashboard
+- [x] 4. Shopping session API + kiosk frontend
+- [x] 5. Stripe integration (test mode)
+- [x] 6. Transaction history
 
 ## Phase 2: Make It Reliable (V2)
 - [ ] 7. Idempotency middleware

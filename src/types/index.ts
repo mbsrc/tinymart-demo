@@ -7,6 +7,12 @@ export interface ErrorDetail {
 export interface ResponseMeta {
   correlation_id: string
   timestamp: string
+  pagination?: {
+    page: number
+    limit: number
+    total: number
+    total_pages: number
+  }
 }
 
 export interface ApiResponse<T = unknown> {
