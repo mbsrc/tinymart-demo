@@ -1,0 +1,10 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.envrc
+node_modules/
+dist/
+*.tsbuildinfo
+*.log
+.claude/settings.local.json
