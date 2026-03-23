@@ -1,6 +1,15 @@
 import request from "supertest"
-import { describe, expect, it } from "vitest"
+import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { app } from "../src/app.js"
+import { sequelize } from "../src/models/index.js"
+
+beforeAll(async () => {
+  await sequelize.sync({ force: true })
+})
+
+afterAll(async () => {
+  await sequelize.close()
+})
 
 describe("Health endpoints", () => {
   it("GET /health returns 200 with envelope", async () => {
@@ -20,6 +29,34 @@ describe("Health endpoints", () => {
 
     expect(res.body.meta.correlation_id).toBe(correlationId)
     expect(res.headers["x-correlation-id"]).toBe(correlationId)
+  })
+
+  it("GET /health/ready checks database connectivity", async () => {
+    const res = await request(app).get("/health/ready")
+
+    expect(res.status).toBe(200)
+    expect(res.body.data.status).toBe("ready")
+    expect(res.body.data.checks.database).toBe("ok")
+  })
+
+  it("GET /health/detailed returns circuit breaker status", async () => {
+    const res = await request(app).get("/health/detailed")
+
+    expect(res.status).toBe(200)
+    expect(res.body.data.circuit_breakers).toBeDefined()
+    expect(res.body.data.circuit_breakers.stripe).toBeDefined()
+    expect(res.body.data.circuit_breakers.stripe.state).toBe("closed")
+    expect(res.body.data.circuit_breakers.stripe.failureCount).toBe(0)
+    expect(res.body.data.circuit_breakers.stripe.lastFailureTime).toBeNull()
+    expect(res.body.data.circuit_breakers.stripe.nextRetryTime).toBeNull()
+  })
+
+  it("GET /health/detailed returns uptime and memory", async () => {
+    const res = await request(app).get("/health/detailed")
+
+    expect(res.body.data.uptime).toBeGreaterThan(0)
+    expect(res.body.data.memory).toBeDefined()
+    expect(res.body.data.memory.heapUsed).toBeGreaterThan(0)
   })
 
   it("returns 404 envelope for unknown routes", async () => {
