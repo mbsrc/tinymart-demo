@@ -1,6 +1,7 @@
 import type { Request, Response } from "express"
 import { Router } from "express"
 import { sequelize } from "../models/index.js"
+import { stripeCircuitBreaker } from "../services/stripe.js"
 import { envelope } from "../utils/envelope.js"
 
 const router = Router()
@@ -58,6 +59,9 @@ router.get("/health/detailed", async (req: Request, res: Response) => {
       {
         status: allHealthy ? "healthy" : "degraded",
         checks,
+        circuit_breakers: {
+          stripe: stripeCircuitBreaker.getStatus(),
+        },
         uptime: process.uptime(),
         memory: process.memoryUsage(),
       },
