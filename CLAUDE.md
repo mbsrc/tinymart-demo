@@ -1,12 +1,21 @@
-  # Project: TinyMart
-  A miniature smart store platform simulating the full shopping lifecycle:
-  tap card → open fridge → grab items → close door → get charged.
-  Backend-reliability demo targeting Micromart engineering interviewers.
+# Project: TinyMart
+A miniature smart store platform simulating the full shopping lifecycle:
+tap card → open fridge → grab items → close door → get charged.
+Backend-reliability demo targeting Micromart engineering interviewers.
+
+## Run Commands
+- Dev Server: `bun dev`
+- Build: `bun build`
+- Start: `bun start`
+- Test: `bun test` / `bun test:watch`
+- Lint/Format: `bun lint` / `bun lint:fix`
+- DB Setup: `bun db:up` (Docker)
+- Migrations: `bun db:migrate` / `bun db:migrate:undo` / `bun db:seed`
 
 ## Tech Stack (locked — ask before making changes)
 - Runtime: Node.js 22 + TypeScript (strict mode)
 - Framework: Express.js (mirrors Micromart's actual stack)
-- Database: PostgreSQL with Sequelize V6 ORM 
+- Database: PostgreSQL with Sequelize V6 ORM
 - Payments: Stripe (test mode)
 - Package Manager: bun
 - Linting & Formatting: Biome
@@ -21,9 +30,26 @@
 - Error types must be explicitly defined, not generic Error throws
 - NEVER hardcode secrets, API keys, or tokens in source code
 
-## Planning
-- Save multi-step plans to docs/plans/ before executing to document key decisions
-- Progress is tracked in docs/progress.md. Read it at the start of any multi-step task
+## Workflow & Process
+### Planning
+- Save multi-step plans to `docs/plans/` before executing to document key decisions
+- Progress is tracked in `docs/progress.md`. Read it at the start of any multi-step task
+
+### Git & PR Workflow
+- Branching Model: Use `develop` as the primary integration branch. Create feature branches from `develop` using the `feature/<name>` pattern.
+- Pull Requests: Target `develop` for standard feature PRs. 
+- Stacked Branches: When using stacked branches, always verify the base branch is set to the correct parent branch in the stack, not `main` or `develop`. Use `gh pr create --base <parent-branch>` to confirm the target.
+
+### General Guidelines
+- When scaffolding projects or making large changes, present a concise plan first and wait for user approval before executing.
+- Prefer incremental steps over doing everything at once.
+
+## Platform Notes
+- Use `sed -i '' ...` syntax for macOS (BSD sed). Do not use GNU sed syntax without the empty string argument.
 
 ## Lessons Learned
-<!-- Add gotchas and hard-won knowledge here as you discover them -->
+- **Docker PostgreSQL on port 5433** — Remapped from 5432 to avoid conflict with local PostgreSQL. Update `.env`, `tests/setup.ts`, and `docker-compose.yml` together.
+- **Sequelize CLI needs CJS** — Project is ESM (`"type": "module"`) but `sequelize-cli` requires CommonJS. Use `tsx node_modules/.bin/sequelize-cli` wrapper and keep `.sequelizerc` + `src/config/sequelize.cjs` as CJS files.
+- **Biome bans `!` (non-null assertion)** — Use a helper function that throws instead (e.g. `getOperator(req)` in `src/middleware/auth.ts`). Never use `as` to silence the linter when a runtime check is the right fix.
+- **Test parallelism breaks Sequelize sync** — `sequelize.sync({ force: true })` in concurrent test files causes OID errors. Set `fileParallelism: false` in `vitest.config.ts`.
+- **Express 4 doesn't catch async errors** — All async route handlers must be wrapped (e.g., using an `asyncHandler` helper) to ensure errors are passed to the global error middleware.
