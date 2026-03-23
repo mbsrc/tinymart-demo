@@ -6,6 +6,7 @@ import { notFound } from "./middleware/notFound.js"
 import { requestLogger } from "./middleware/requestLogger.js"
 import { healthRouter } from "./routes/health.js"
 import { productsRouter } from "./routes/products.js"
+import { sessionsRouter } from "./routes/sessions.js"
 import { storesRouter } from "./routes/stores.js"
 
 const app = express()
@@ -30,6 +31,7 @@ app.use(healthRouter)
 // 7. API routes
 app.use("/api/stores", authenticateOperator, storesRouter)
 app.use("/api/products", authenticateOperator, productsRouter)
+app.use("/api/sessions", sessionsRouter)
 
 // 8. 404 handler (3-arg)
 app.use(notFound)
