@@ -9,6 +9,7 @@ import DashboardPage from "./pages/DashboardPage"
 import HealthPage from "./pages/HealthPage"
 import KioskPage from "./pages/KioskPage"
 import StoreDetailPage from "./pages/StoreDetailPage"
+import TransactionsPage from "./pages/TransactionsPage"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +31,7 @@ function ProtectedRoutes() {
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/stores/:id" element={<StoreDetailPage />} />
+            <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/health" element={<HealthPage />} />
           </Routes>
         </ErrorBoundary>

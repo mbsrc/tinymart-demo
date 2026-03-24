@@ -90,6 +90,18 @@ export interface Transaction {
   status: TransactionStatus
   created_at: string
   updated_at: string
+  Store?: { id: string; name: string; location_name?: string | null }
+}
+
+export interface TransactionDetail extends Transaction {
+  Session?: Session
+}
+
+export interface TransactionListResponse {
+  transactions: Transaction[]
+  total: number
+  limit: number
+  offset: number
 }
 
 // Health types
