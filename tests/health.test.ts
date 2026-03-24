@@ -1,13 +1,23 @@
 import request from "supertest"
-import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { app } from "../src/app.js"
 import { sequelize } from "../src/models/index.js"
+import { dependencyRegistry } from "../src/services/dependencyRegistry.js"
 
 beforeAll(async () => {
   await sequelize.sync({ force: true })
+
+  // Register test dependencies so health endpoints have something to check
+  dependencyRegistry.register("database", async () => {
+    await sequelize.authenticate()
+    return "healthy"
+  })
+  dependencyRegistry.register("stripe", async () => "healthy")
+  dependencyRegistry.register("job_queue", async () => "healthy")
 })
 
 afterAll(async () => {
+  dependencyRegistry.stopMonitoring()
   await sequelize.close()
 })
 
@@ -31,12 +41,44 @@ describe("Health endpoints", () => {
     expect(res.headers["x-correlation-id"]).toBe(correlationId)
   })
 
-  it("GET /health/ready checks database connectivity", async () => {
+  it("GET /health/ready returns ready when all deps healthy", async () => {
     const res = await request(app).get("/health/ready")
 
     expect(res.status).toBe(200)
     expect(res.body.data.status).toBe("ready")
-    expect(res.body.data.checks.database).toBe("ok")
+    expect(res.body.data.checks.database).toBe("healthy")
+    expect(res.body.data.checks.stripe).toBe("healthy")
+    expect(res.body.data.checks.job_queue).toBe("healthy")
+  })
+
+  it("GET /health/ready returns degraded when non-critical dep is down", async () => {
+    // Override stripe to return unavailable
+    dependencyRegistry.register("stripe", async () => "unavailable")
+
+    const res = await request(app).get("/health/ready")
+
+    expect(res.status).toBe(200)
+    expect(res.body.data.status).toBe("degraded")
+    expect(res.body.data.checks.database).toBe("healthy")
+    expect(res.body.data.checks.stripe).toBe("unavailable")
+
+    // Restore
+    dependencyRegistry.register("stripe", async () => "healthy")
+  })
+
+  it("GET /health/ready returns 503 when database is down", async () => {
+    dependencyRegistry.register("database", async () => "unavailable")
+
+    const res = await request(app).get("/health/ready")
+
+    expect(res.status).toBe(503)
+    expect(res.body.data.status).toBe("unavailable")
+
+    // Restore
+    dependencyRegistry.register("database", async () => {
+      await sequelize.authenticate()
+      return "healthy"
+    })
   })
 
   it("GET /health/detailed returns circuit breaker status", async () => {
@@ -49,6 +91,15 @@ describe("Health endpoints", () => {
     expect(res.body.data.circuit_breakers.stripe.failureCount).toBe(0)
     expect(res.body.data.circuit_breakers.stripe.lastFailureTime).toBeNull()
     expect(res.body.data.circuit_breakers.stripe.nextRetryTime).toBeNull()
+  })
+
+  it("GET /health/detailed returns dependency registry statuses", async () => {
+    const res = await request(app).get("/health/detailed")
+
+    expect(res.body.data.dependencies).toBeDefined()
+    expect(res.body.data.dependencies.database.status).toBe("healthy")
+    expect(res.body.data.dependencies.stripe.status).toBe("healthy")
+    expect(res.body.data.dependencies.job_queue.status).toBe("healthy")
   })
 
   it("GET /health/detailed returns job queue status", async () => {

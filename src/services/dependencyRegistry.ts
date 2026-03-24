@@ -19,7 +19,7 @@ interface RegisteredDependency {
   lastError: string | null
 }
 
-class DependencyRegistry {
+export class DependencyRegistry {
   private dependencies = new Map<string, RegisteredDependency>()
   private monitorInterval: ReturnType<typeof setInterval> | null = null
 
