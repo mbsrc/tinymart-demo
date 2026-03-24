@@ -19,39 +19,21 @@ const queryClient = new QueryClient({
   },
 })
 
-function AppRoutes() {
+function ProtectedRoutes() {
   const { apiKey } = useAuth()
 
   return (
     <>
       {!apiKey && <ApiKeyPrompt />}
-      <Routes>
-        {/* Kiosk has its own full-screen layout */}
-        <Route
-          path="/kiosk/:storeId"
-          element={
-            <ErrorBoundary>
-              <KioskPage />
-            </ErrorBoundary>
-          }
-        />
-
-        {/* Dashboard routes with sidebar */}
-        <Route
-          path="*"
-          element={
-            <Layout>
-              <ErrorBoundary>
-                <Routes>
-                  <Route path="/" element={<DashboardPage />} />
-                  <Route path="/stores/:id" element={<StoreDetailPage />} />
-                  <Route path="/health" element={<HealthPage />} />
-                </Routes>
-              </ErrorBoundary>
-            </Layout>
-          }
-        />
-      </Routes>
+      <Layout>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/stores/:id" element={<StoreDetailPage />} />
+            <Route path="/health" element={<HealthPage />} />
+          </Routes>
+        </ErrorBoundary>
+      </Layout>
     </>
   )
 }
@@ -61,7 +43,20 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <AppRoutes />
+          <Routes>
+            {/* Kiosk is public — no API key needed */}
+            <Route
+              path="/kiosk/:storeId"
+              element={
+                <ErrorBoundary>
+                  <KioskPage />
+                </ErrorBoundary>
+              }
+            />
+
+            {/* All other routes require API key */}
+            <Route path="/*" element={<ProtectedRoutes />} />
+          </Routes>
         </AuthProvider>
       </BrowserRouter>
       <ReactQueryDevtools initialIsOpen={false} />

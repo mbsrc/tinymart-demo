@@ -15,7 +15,8 @@ export default function HealthPage() {
   if (!health) return null
 
   const isHealthy = health.status === "healthy"
-  const deps = Object.entries(health.dependencies)
+  const deps = Object.entries(health.dependencies ?? {})
+  const breakers = health.circuit_breakers ?? {}
 
   return (
     <div>
@@ -50,7 +51,7 @@ export default function HealthPage() {
       </div>
 
       <div className="mt-6">
-        <CircuitBreakerPanel breakers={health.circuit_breakers} />
+        <CircuitBreakerPanel breakers={breakers} />
       </div>
 
       <div className="mt-6">

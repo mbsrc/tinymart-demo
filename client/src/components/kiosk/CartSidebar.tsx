@@ -51,7 +51,8 @@ export function CartSidebar({
                     <button
                       type="button"
                       onClick={() => onRemove(line.product_id)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-300"
+                      disabled={line.quantity <= 1}
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       -
                     </button>

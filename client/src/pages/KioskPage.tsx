@@ -7,8 +7,13 @@ import { TapToStart } from "../components/kiosk/TapToStart"
 import { ErrorDisplay } from "../components/ui/ErrorDisplay"
 import { LoadingSpinner } from "../components/ui/LoadingSpinner"
 import { usePageTitle } from "../hooks/usePageTitle"
-import { useAddItem, useCloseSession, useCreateSession, useSession } from "../hooks/useSession"
-import { useStore } from "../hooks/useStores"
+import {
+  useAddItem,
+  useCloseSession,
+  useCreateSession,
+  useKioskStore,
+  useSession,
+} from "../hooks/useSession"
 import type { Product } from "../types/api"
 import { reconcileCart } from "../utils/reconcileCart"
 
@@ -16,11 +21,12 @@ type Phase = "idle" | "shopping" | "closing" | "receipt"
 
 export default function KioskPage() {
   const { storeId } = useParams<{ storeId: string }>()
-  const { data: store, isLoading: storeLoading, error: storeError } = useStore(storeId ?? "")
+  const { data: store, isLoading: storeLoading, error: storeError } = useKioskStore(storeId ?? "")
   usePageTitle(store ? `Kiosk — ${store.name}` : "Kiosk")
   const [phase, setPhase] = useState<Phase>("idle")
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [addingId, setAddingId] = useState<string | null>(null)
+  const [closeError, setCloseError] = useState<string | null>(null)
 
   const createSession = useCreateSession()
   const { data: session } = useSession(sessionId)
@@ -67,22 +73,29 @@ export default function KioskPage() {
 
   const handleRemove = useCallback(
     (productId: string) => {
+      const line = cartLines.find((l) => l.product_id === productId)
+      if (!line || line.quantity <= 0) return
       addItem.mutate({ product_id: productId, action: "removed" })
     },
-    [addItem],
+    [addItem, cartLines],
   )
 
   const handleClose = useCallback(() => {
     if (!sessionId) return
     setPhase("closing")
+    setCloseError(null)
     closeSession.mutate(sessionId, {
       onSuccess: () => setPhase("receipt"),
-      onError: () => setPhase("shopping"),
+      onError: (err) => {
+        setPhase("shopping")
+        setCloseError((err as Error).message ?? "Failed to close session. Please try again.")
+      },
     })
   }, [sessionId, closeSession])
 
   const handleNewSession = useCallback(() => {
     setSessionId(null)
+    setCloseError(null)
     setPhase("idle")
   }, [])
 
@@ -155,6 +168,18 @@ export default function KioskPage() {
             &larr; Dashboard
           </Link>
         </div>
+        {closeError && (
+          <div className="border-b border-red-200 bg-red-50 px-6 py-3 text-sm text-red-700">
+            {closeError}
+            <button
+              type="button"
+              onClick={() => setCloseError(null)}
+              className="ml-2 font-medium underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto">
           <ProductGrid products={products} onAdd={handleAdd} addingId={addingId} />
         </div>

@@ -52,9 +52,12 @@ export function EditInventoryModal({
             id="edit-qty"
             type="number"
             min={0}
+            max={99999}
+            step={1}
             value={qty}
-            onChange={(e) => setQty(Number(e.target.value))}
+            onChange={(e) => setQty(Math.floor(Number(e.target.value) || 0))}
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+            required
           />
         </div>
         <div>
@@ -65,9 +68,12 @@ export function EditInventoryModal({
             id="edit-threshold"
             type="number"
             min={0}
+            max={99999}
+            step={1}
             value={threshold}
-            onChange={(e) => setThreshold(Number(e.target.value))}
+            onChange={(e) => setThreshold(Math.floor(Number(e.target.value) || 0))}
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+            required
           />
         </div>
         {updateInventory.error && (

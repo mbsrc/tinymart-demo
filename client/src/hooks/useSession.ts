@@ -1,5 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { addItem, closeSession, createSession, getSession } from "../api/sessions"
+import { addItem, closeSession, createSession, getKioskStore, getSession } from "../api/sessions"
+
+export function useKioskStore(storeId: string) {
+  return useQuery({
+    queryKey: ["kiosk-store", storeId],
+    queryFn: () => getKioskStore(storeId),
+    enabled: !!storeId,
+  })
+}
 
 export function useCreateSession() {
   return useMutation({

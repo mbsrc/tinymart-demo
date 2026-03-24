@@ -1,5 +1,9 @@
-import type { Session, SessionItem, Transaction } from "../types/api"
+import type { Session, SessionItem, Store, Transaction } from "../types/api"
 import { apiGet, apiPost } from "./client"
+
+export function getKioskStore(storeId: string) {
+  return apiGet<Store>(`/api/sessions/store/${storeId}`)
+}
 
 export function createSession(data: {
   store_id: string
