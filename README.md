@@ -127,6 +127,22 @@ Every response uses a consistent envelope:
 | `POST` | `/api/products` | Create a product |
 | `GET` | `/api/products` | List products (optional `?category=` filter) |
 
+### Sessions (Kiosk)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/sessions` | Open a new shopping session (pre-authorize card) |
+| `GET` | `/api/sessions/:id` | Get session with items |
+| `POST` | `/api/sessions/:id/items` | Add or remove item from cart |
+| `POST` | `/api/sessions/:id/close` | Close door, capture payment, deduct inventory |
+
+### Transactions
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/transactions` | List transactions (filters: `store_id`, `status`, `from`, `to`) |
+| `GET` | `/api/transactions/:id` | Transaction detail with itemized receipt |
+
 ### Health
 
 | Method | Path | Description |
@@ -161,7 +177,9 @@ bun run test              # run all tests
 bun run test:watch        # watch mode
 ```
 
-126 tests across 15 test files covering middleware, routes, services, models, and reliability patterns.
+**Backend:** 221 tests across 24 test files covering middleware, routes, services, models, and reliability patterns.
+**Frontend:** 130 UI tests (Vitest + React Testing Library + MSW) covering all pages and components.
+**E2E:** 5 Playwright specs covering auth, dashboard, store detail, kiosk checkout, and health page.
 
 ### Load Testing
 
