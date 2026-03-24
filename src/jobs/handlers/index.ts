@@ -2,6 +2,8 @@ import type { PgBoss } from "pg-boss"
 import { logger } from "../../utils/logger.js"
 import { handleCleanupIdempotencyKeys } from "./cleanupIdempotencyKeys.js"
 import { handleDeductInventory } from "./deductInventory.js"
+import { handleProcessDeferredCharges } from "./processDeferredCharges.js"
+import { handleReplayPendingJobs } from "./replayPendingJobs.js"
 import { handleSendReceipt } from "./sendReceipt.js"
 
 export async function registerHandlers(boss: PgBoss): Promise<void> {
@@ -21,4 +23,26 @@ export async function registerHandlers(boss: PgBoss): Promise<void> {
   )
   await boss.work("cleanup-expired-idempotency-keys", handleCleanupIdempotencyKeys)
   logger.info("Registered scheduled job: cleanup-expired-idempotency-keys (hourly)")
+
+  await boss.schedule(
+    "replay-pending-jobs",
+    "*/5 * * * *",
+    {},
+    {
+      retryLimit: 1,
+    },
+  )
+  await boss.work("replay-pending-jobs", handleReplayPendingJobs)
+  logger.info("Registered scheduled job: replay-pending-jobs (every 5 min)")
+
+  await boss.schedule(
+    "process-deferred-charges",
+    "*/2 * * * *",
+    {},
+    {
+      retryLimit: 1,
+    },
+  )
+  await boss.work("process-deferred-charges", handleProcessDeferredCharges)
+  logger.info("Registered scheduled job: process-deferred-charges (every 2 min)")
 }
