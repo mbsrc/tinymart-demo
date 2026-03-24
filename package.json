@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "typecheck": "tsc --noEmit",
     "start": "node dist/server.js",
     "lint": "biome check --write .",
     "format": "biome check --write .",
@@ -13,6 +14,8 @@
     "test:watch": "vitest",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
+    "db:dev:create": "docker exec tinymart-db psql -U tinymart -d postgres -c 'CREATE DATABASE tinymart_dev OWNER tinymart' || true",
+    "db:test:create": "docker exec tinymart-db psql -U tinymart -d postgres -c 'CREATE DATABASE tinymart_test OWNER tinymart' || true",
     "db:migrate": "tsx node_modules/.bin/sequelize-cli db:migrate",
     "db:migrate:undo": "tsx node_modules/.bin/sequelize-cli db:migrate:undo",
     "db:seed": "tsx node_modules/.bin/sequelize-cli db:seed:all",
