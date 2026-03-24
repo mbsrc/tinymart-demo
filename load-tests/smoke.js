@@ -6,7 +6,7 @@ import { Counter, Rate, Trend } from "k6/metrics"
 // --- Configuration ---
 
 const BASE_URL = __ENV.BASE_URL || "http://localhost:3001"
-const API_KEY = __ENV.API_KEY
+const API_KEY = __ENV.API_KEY || "tinymart-demo-key-2026" // NOTE: default for demo app
 
 if (!API_KEY) {
   throw new Error("API_KEY env var is required. Run: k6 run -e API_KEY=<key> smoke.js")
