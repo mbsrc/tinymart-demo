@@ -104,4 +104,91 @@ describe("Inventory lifecycle", () => {
       expect(adjustment.quantity).toBe(-5)
     })
   })
+
+  describe("Multiple products in one store", () => {
+    let storeId: string
+    const products: { id: string; name: string; qty: number }[] = []
+
+    it("creates 3 products and a store", async () => {
+      const items = [
+        { name: "Cola", sku: "COLA-001", price_cents: 199, category: "fridge", qty: 10 },
+        { name: "Chips", sku: "CHP-001", price_cents: 349, category: "pantry", qty: 25 },
+        { name: "Ice Cream", sku: "ICE-001", price_cents: 499, category: "freezer", qty: 8 },
+      ]
+
+      for (const item of items) {
+        const res = await request(app)
+          .post("/api/products")
+          .set({ ...headers, ...idemKey() })
+          .send({
+            name: item.name,
+            sku: item.sku,
+            price_cents: item.price_cents,
+            category: item.category,
+          })
+
+        expect(res.status).toBe(201)
+        products.push({ id: res.body.data.id, name: item.name, qty: item.qty })
+      }
+
+      const storeRes = await request(app)
+        .post("/api/stores")
+        .set({ ...headers, ...idemKey() })
+        .send({ name: "Multi-Product Store" })
+
+      expect(storeRes.status).toBe(201)
+      storeId = storeRes.body.data.id
+    })
+
+    it("adds all 3 products with different quantities", async () => {
+      for (const product of products) {
+        const res = await request(app)
+          .post(`/api/stores/${storeId}/products`)
+          .set({ ...headers, ...idemKey() })
+          .send({ product_id: product.id, quantity_on_hand: product.qty })
+
+        expect(res.status).toBe(201)
+        expect(res.body.data.quantity_on_hand).toBe(product.qty)
+      }
+    })
+
+    it("store detail shows all 3 products with correct quantities", async () => {
+      const res = await request(app).get(`/api/stores/${storeId}`).set(headers)
+
+      expect(res.status).toBe(200)
+      const storeProducts = res.body.data.StoreProducts
+      expect(storeProducts).toHaveLength(3)
+
+      for (const product of products) {
+        const sp = storeProducts.find((s: Record<string, unknown>) => s.product_id === product.id)
+        expect(sp).toBeDefined()
+        expect(sp.quantity_on_hand).toBe(product.qty)
+      }
+    })
+
+    it("adjusting one product does not affect the others", async () => {
+      // Restock Cola to 50
+      const patchRes = await request(app)
+        .patch(`/api/stores/${storeId}/products/${products[0].id}`)
+        .set({ ...headers, ...idemKey() })
+        .send({ quantity_on_hand: 50 })
+
+      expect(patchRes.status).toBe(200)
+      expect(patchRes.body.data.quantity_on_hand).toBe(50)
+
+      // Verify the other two are unchanged
+      const storeRes = await request(app).get(`/api/stores/${storeId}`).set(headers)
+
+      const storeProducts = storeRes.body.data.StoreProducts
+      const chips = storeProducts.find(
+        (s: Record<string, unknown>) => s.product_id === products[1].id,
+      )
+      const iceCream = storeProducts.find(
+        (s: Record<string, unknown>) => s.product_id === products[2].id,
+      )
+
+      expect(chips.quantity_on_hand).toBe(25)
+      expect(iceCream.quantity_on_hand).toBe(8)
+    })
+  })
 })
