@@ -49,7 +49,7 @@ export function rateLimiter(req: Request, res: Response, next: NextFunction): vo
   entry.timestamps = entry.timestamps.filter((t) => t > windowStart)
 
   if (entry.timestamps.length >= config.rateLimitMaxRequests) {
-    const oldestInWindow = entry.timestamps[0]
+    const oldestInWindow = entry.timestamps[0] ?? now
     const retryAfterMs = oldestInWindow + config.rateLimitWindowMs - now
     const retryAfterSec = Math.ceil(retryAfterMs / 1000)
 

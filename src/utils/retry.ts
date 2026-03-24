@@ -61,13 +61,13 @@ export function isRetryableStripeError(error: unknown): boolean {
   if (!(error instanceof Error)) return true
 
   // Stripe errors have a `statusCode` property
-  const statusCode = (error as Record<string, unknown>).statusCode
+  const statusCode = (error as unknown as Record<string, unknown>).statusCode
   if (typeof statusCode === "number") {
     return statusCode >= 500
   }
 
   // Network errors (ECONNREFUSED, ETIMEDOUT, etc.) should be retried
-  const code = (error as Record<string, unknown>).code
+  const code = (error as unknown as Record<string, unknown>).code
   if (typeof code === "string" && code.startsWith("E")) {
     return true
   }

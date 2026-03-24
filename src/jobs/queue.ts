@@ -8,12 +8,6 @@ let boss: PgBoss | null = null
 export async function startJobQueue(): Promise<PgBoss> {
   boss = new PgBoss({
     connectionString: config.databaseUrl,
-    retryLimit: 3,
-    retryDelay: 5,
-    retryBackoff: true,
-    expireInHours: 1,
-    archiveCompletedAfterSeconds: 3600,
-    deleteAfterDays: 7,
   })
 
   boss.on("error", (error) => {
