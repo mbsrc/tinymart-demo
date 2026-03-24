@@ -35,5 +35,6 @@ declare module "express-serve-static-core" {
     correlationId: string
     idempotencyKey?: string
     operator?: import("../models/Operator.js").Operator
+    degradation?: import("../middleware/degradation.js").DegradationContext
   }
 }
