@@ -47,5 +47,8 @@ export async function constructWebhookEvent(
   signature: string,
 ): Promise<Stripe.Event> {
   // Webhook signature verification is synchronous and local — no circuit breaker needed
+  if (!config.stripeWebhookSecret) {
+    throw new Error("STRIPE_WEBHOOK_SECRET is not configured")
+  }
   return stripe.webhooks.constructEvent(payload, signature, config.stripeWebhookSecret)
 }

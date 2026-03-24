@@ -3,7 +3,7 @@ import "dotenv/config"
 interface Config {
   databaseUrl: string
   stripeSecretKey: string
-  stripeWebhookSecret: string
+  stripeWebhookSecret: string | undefined
   port: number
   nodeEnv: string
   betterStackSourceToken: string | undefined
@@ -23,7 +23,7 @@ function loadConfig(): Config {
   return {
     databaseUrl: requireEnv("DATABASE_URL"),
     stripeSecretKey: requireEnv("STRIPE_SECRET_KEY"),
-    stripeWebhookSecret: requireEnv("STRIPE_WEBHOOK_SECRET"),
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     port: Number.parseInt(requireEnv("PORT"), 10),
     nodeEnv: requireEnv("NODE_ENV"),
     betterStackSourceToken: process.env.BETTERSTACK_SOURCE_TOKEN,
