@@ -12,6 +12,7 @@ import { rateLimiter } from "./middleware/rateLimiter.js"
 import { requestLogger } from "./middleware/requestLogger.js"
 import { healthRouter } from "./routes/health.js"
 import { productsRouter } from "./routes/products.js"
+import { sessionsRouter } from "./routes/sessions.js"
 import { storesRouter } from "./routes/stores.js"
 
 const app = express()
@@ -50,6 +51,7 @@ app.use(degradation)
 // 10. API routes
 app.use("/api/stores", authenticateOperator, idempotency, storesRouter)
 app.use("/api/products", authenticateOperator, idempotency, productsRouter)
+app.use("/api/sessions", idempotency, sessionsRouter)
 
 // 11. 404 handler (3-arg)
 app.use(notFound)
