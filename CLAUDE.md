@@ -36,15 +36,15 @@ Backend-reliability demo targeting Micromart engineering interviewers.
 - Progress is tracked in `docs/progress.md`. Read it at the start of any multi-step task
 
 ### Git & PR Workflow
-- Branching Model: Use `develop` as the primary integration branch. Create feature branches from `develop` using the `feature/<name>` pattern
-- Pull Requests: Target `develop` for standard feature PRs
+- When creating PRs for stacked branches, always verify the base branch is set to the correct parent branch in the stack, not `main`.
+- Before running `gh pr create`, confirm the `--base` flag targets the immediate parent branch.
 
 ### General Guidelines
 - When scaffolding projects or making large changes, present a concise plan first and wait for user approval before executing.
 - Prefer incremental steps over doing everything at once.
 
 ## Platform Notes
-Use `sed -i '' ...` (BSD sed) syntax on macOS, not `sed -i ...` (GNU sed).
+- Use `sed -i '' ...` syntax for macOS (BSD sed). Do not use GNU sed syntax without the empty string argument.
 
 ## Lessons Learned
 - **Docker PostgreSQL on port 5433** — Remapped from 5432 to avoid conflict with local PostgreSQL. Update `.env`, `tests/setup.ts`, and `docker-compose.yml` together.
@@ -52,5 +52,3 @@ Use `sed -i '' ...` (BSD sed) syntax on macOS, not `sed -i ...` (GNU sed).
 - **Biome bans `!` (non-null assertion)** — Use a helper function that throws instead (e.g. `getOperator(req)` in `src/middleware/auth.ts`). Never use `as` to silence the linter when a runtime check is the right fix.
 - **Test parallelism breaks Sequelize sync** — `sequelize.sync({ force: true })` in concurrent test files causes OID errors. Set `fileParallelism: false` in `vitest.config.ts`.
 - **Express 4 doesn't catch async errors** — All async route handlers must be wrapped (e.g., using an `asyncHandler` helper) to ensure errors are passed to the global error middleware.
-- **pg-boss v12 requires explicit queue creation** — Call `boss.createQueue("name")` before `boss.work()` or `boss.schedule()`. Without this, workers error with "Queue does not exist".
-- **Docker `pg_isready` needs `-d` flag** — `pg_isready -U tinymart` defaults to database `tinymart` (matches username). Always pass `-d tinymart_dev` to target the actual database.
