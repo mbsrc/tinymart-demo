@@ -8,6 +8,7 @@ let headersB: Record<string, string>
 const LIMIT = 100
 
 beforeAll(async () => {
+  resetRateLimiter()
   await sequelize.sync({ force: true })
   const ctxA = await createOperator("Rate Op A")
   const ctxB = await createOperator("Rate Op B")
