@@ -9,6 +9,7 @@ interface Config {
   betterStackSourceToken: string | undefined
   rateLimitWindowMs: number
   rateLimitMaxRequests: number
+  corsAllowedOrigins: string[]
 }
 
 function requireEnv(name: string): string {
@@ -29,6 +30,9 @@ function loadConfig(): Config {
     betterStackSourceToken: process.env.BETTERSTACK_SOURCE_TOKEN,
     rateLimitWindowMs: Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000", 10),
     rateLimitMaxRequests: Number.parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "100", 10),
+    corsAllowedOrigins: process.env.CORS_ALLOWED_ORIGINS
+      ? process.env.CORS_ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+      : ["*"],
   }
 }
 
