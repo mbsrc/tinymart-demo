@@ -6,6 +6,7 @@ import { Receipt } from "../components/kiosk/Receipt"
 import { TapToStart } from "../components/kiosk/TapToStart"
 import { ErrorDisplay } from "../components/ui/ErrorDisplay"
 import { LoadingSpinner } from "../components/ui/LoadingSpinner"
+import { usePageTitle } from "../hooks/usePageTitle"
 import { useAddItem, useCloseSession, useCreateSession, useSession } from "../hooks/useSession"
 import { useStore } from "../hooks/useStores"
 import type { Product } from "../types/api"
@@ -16,6 +17,7 @@ type Phase = "idle" | "shopping" | "closing" | "receipt"
 export default function KioskPage() {
   const { storeId } = useParams<{ storeId: string }>()
   const { data: store, isLoading: storeLoading, error: storeError } = useStore(storeId ?? "")
+  usePageTitle(store ? `Kiosk — ${store.name}` : "Kiosk")
   const [phase, setPhase] = useState<Phase>("idle")
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [addingId, setAddingId] = useState<string | null>(null)

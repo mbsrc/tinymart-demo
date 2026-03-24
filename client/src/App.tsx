@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { ApiKeyPrompt } from "./components/ApiKeyPrompt"
 import { Layout } from "./components/Layout"
+import { ErrorBoundary } from "./components/ui/ErrorBoundary"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import DashboardPage from "./pages/DashboardPage"
 import HealthPage from "./pages/HealthPage"
@@ -25,18 +27,27 @@ function AppRoutes() {
       {!apiKey && <ApiKeyPrompt />}
       <Routes>
         {/* Kiosk has its own full-screen layout */}
-        <Route path="/kiosk/:storeId" element={<KioskPage />} />
+        <Route
+          path="/kiosk/:storeId"
+          element={
+            <ErrorBoundary>
+              <KioskPage />
+            </ErrorBoundary>
+          }
+        />
 
         {/* Dashboard routes with sidebar */}
         <Route
           path="*"
           element={
             <Layout>
-              <Routes>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/stores/:id" element={<StoreDetailPage />} />
-                <Route path="/health" element={<HealthPage />} />
-              </Routes>
+              <ErrorBoundary>
+                <Routes>
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/stores/:id" element={<StoreDetailPage />} />
+                  <Route path="/health" element={<HealthPage />} />
+                </Routes>
+              </ErrorBoundary>
             </Layout>
           }
         />
@@ -53,6 +64,7 @@ export default function App() {
           <AppRoutes />
         </AuthProvider>
       </BrowserRouter>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   )
 }

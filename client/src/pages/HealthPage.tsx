@@ -4,8 +4,10 @@ import { SystemMetrics } from "../components/health/SystemMetrics"
 import { ErrorDisplay } from "../components/ui/ErrorDisplay"
 import { LoadingSpinner } from "../components/ui/LoadingSpinner"
 import { useDetailedHealth } from "../hooks/useHealth"
+import { usePageTitle } from "../hooks/usePageTitle"
 
 export default function HealthPage() {
+  usePageTitle("System Health")
   const { data: health, isLoading, error, refetch, dataUpdatedAt } = useDetailedHealth()
 
   if (isLoading) return <LoadingSpinner className="py-20" />

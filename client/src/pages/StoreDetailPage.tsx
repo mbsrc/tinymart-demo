@@ -5,18 +5,20 @@ import { EditInventoryModal } from "../components/EditInventoryModal"
 import { ProductTable } from "../components/ProductTable"
 import { EmptyState } from "../components/ui/EmptyState"
 import { ErrorDisplay } from "../components/ui/ErrorDisplay"
-import { LoadingSpinner } from "../components/ui/LoadingSpinner"
+import { ProductTableSkeleton } from "../components/ui/Skeleton"
 import { StatusBadge } from "../components/ui/StatusBadge"
+import { usePageTitle } from "../hooks/usePageTitle"
 import { useStore } from "../hooks/useStores"
 import type { StoreProduct } from "../types/api"
 
 export default function StoreDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: store, isLoading, error, refetch } = useStore(id ?? "")
+  usePageTitle(store?.name ?? "Store")
   const [showAdd, setShowAdd] = useState(false)
   const [editingProduct, setEditingProduct] = useState<StoreProduct | null>(null)
 
-  if (isLoading) return <LoadingSpinner className="py-20" />
+  if (isLoading) return <ProductTableSkeleton />
   if (error) return <ErrorDisplay error={error as Error} onRetry={() => refetch()} />
   if (!store) return null
 
