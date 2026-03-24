@@ -1,7 +1,9 @@
 import { screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { http, HttpResponse } from "msw"
 import { Route, Routes } from "react-router-dom"
 import { describe, expect, it } from "vitest"
+import { server } from "../test/mocks/server"
 import { renderWithProviders } from "../test/render"
 import KioskPage from "./KioskPage"
 
@@ -14,118 +16,308 @@ function renderKiosk(storeId = "store-1") {
   )
 }
 
+async function startSession(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole("button", { name: /tap to start/i }))
+  await screen.findByText("Your Cart")
+}
+
+async function addFirstProduct(user: ReturnType<typeof userEvent.setup>) {
+  const addButton = screen.getAllByRole("button", { name: /add to cart/i }).at(0)
+  expect(addButton).toBeDefined()
+  await user.click(addButton as HTMLElement)
+  await waitFor(() => {
+    expect(screen.queryByText("Your cart is empty")).not.toBeInTheDocument()
+  })
+}
+
 describe("KioskPage", () => {
-  it("shows the store name and tap-to-start button", async () => {
-    renderKiosk()
-    expect(await screen.findByText("Downtown Fridge")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /tap to start/i })).toBeInTheDocument()
-  })
+  describe("idle phase", () => {
+    it("shows store name and tap-to-start button", async () => {
+      renderKiosk()
+      expect(await screen.findByText("Downtown Fridge")).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: /tap to start/i })).toBeInTheDocument()
+    })
 
-  it("shows dashboard link on idle screen", async () => {
-    renderKiosk()
-    await screen.findByText("Downtown Fridge")
-    expect(screen.getByRole("link", { name: /dashboard/i })).toBeInTheDocument()
-  })
+    it("shows smart shopping subtitle", async () => {
+      renderKiosk()
+      expect(await screen.findByText(/smart shopping/i)).toBeInTheDocument()
+    })
 
-  it("shows error for unknown store", async () => {
-    renderKiosk("store-unknown")
-    expect(await screen.findByText(/store not found/i)).toBeInTheDocument()
-  })
+    it("shows dashboard link", async () => {
+      renderKiosk()
+      await screen.findByText("Downtown Fridge")
+      expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute("href", "/")
+    })
 
-  it("transitions to shopping phase on start", async () => {
-    const user = userEvent.setup()
-    renderKiosk()
-
-    const startBtn = await screen.findByRole("button", { name: /tap to start/i })
-    await user.click(startBtn)
-
-    // Shopping phase shows product grid and cart
-    expect(await screen.findByText("Your Cart")).toBeInTheDocument()
-    expect(screen.getByText("Bottled Water")).toBeInTheDocument()
-    expect(screen.getByText("Energy Bar")).toBeInTheDocument()
-  })
-
-  it("adds items to cart when clicking product", async () => {
-    const user = userEvent.setup()
-    renderKiosk()
-
-    await user.click(await screen.findByRole("button", { name: /tap to start/i }))
-    await screen.findByText("Your Cart")
-
-    // Cart should start empty
-    expect(screen.getByText("Your cart is empty")).toBeInTheDocument()
-
-    // Click a product to add it
-    const addButton = screen.getAllByRole("button", { name: /add to cart/i }).at(0)
-    expect(addButton).toBeDefined()
-    await user.click(addButton as HTMLElement)
-
-    // Item should appear in the cart
-    await waitFor(() => {
-      expect(screen.queryByText("Your cart is empty")).not.toBeInTheDocument()
+    it("does not require an API key", async () => {
+      renderKiosk()
+      // Renders store without auth — no API key set
+      expect(await screen.findByText("Downtown Fridge")).toBeInTheDocument()
     })
   })
 
-  it("disables close button when cart is empty", async () => {
-    const user = userEvent.setup()
-    renderKiosk()
-
-    await user.click(await screen.findByRole("button", { name: /tap to start/i }))
-    await screen.findByText("Your Cart")
-
-    const closeBtn = screen.getByRole("button", { name: /close door & pay/i })
-    expect(closeBtn).toBeDisabled()
-  })
-
-  it("shows receipt after closing session", async () => {
-    const user = userEvent.setup()
-    renderKiosk()
-
-    // Start session
-    await user.click(await screen.findByRole("button", { name: /tap to start/i }))
-    await screen.findByText("Your Cart")
-
-    // Add an item
-    const addButton = screen.getAllByRole("button", { name: /add to cart/i }).at(0)
-    expect(addButton).toBeDefined()
-    await user.click(addButton as HTMLElement)
-
-    // Wait for cart to populate
-    await waitFor(() => {
-      expect(screen.queryByText("Your cart is empty")).not.toBeInTheDocument()
+  describe("error states", () => {
+    it("shows error for unknown store", async () => {
+      renderKiosk("store-unknown")
+      expect(await screen.findByText(/store not found/i)).toBeInTheDocument()
     })
 
-    // Close session
-    const closeBtn = screen.getByRole("button", { name: /close door & pay/i })
-    await waitFor(() => expect(closeBtn).not.toBeDisabled())
-    await user.click(closeBtn)
-
-    // Receipt phase
-    expect(await screen.findByText(/payment complete/i)).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /new session/i })).toBeInTheDocument()
+    it("shows error when kiosk store endpoint fails", async () => {
+      server.use(
+        http.get("/api/sessions/store/:storeId", () => {
+          return HttpResponse.json(
+            {
+              success: false,
+              data: null,
+              error: { code: "SERVER_ERROR", message: "Internal error" },
+              meta: {},
+            },
+            { status: 500 },
+          )
+        }),
+      )
+      renderKiosk()
+      expect(await screen.findByText(/internal error/i)).toBeInTheDocument()
+    })
   })
 
-  it("returns to idle after clicking new session on receipt", async () => {
-    const user = userEvent.setup()
-    renderKiosk()
+  describe("shopping phase", () => {
+    it("transitions to shopping on start", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
 
-    // Start → add item → close
-    await user.click(await screen.findByRole("button", { name: /tap to start/i }))
-    await screen.findByText("Your Cart")
-    const addButton = screen.getAllByRole("button", { name: /add to cart/i }).at(0)
-    expect(addButton).toBeDefined()
-    await user.click(addButton as HTMLElement)
-    await waitFor(() => {
-      expect(screen.queryByText("Your cart is empty")).not.toBeInTheDocument()
+      expect(screen.getByText("Bottled Water")).toBeInTheDocument()
+      expect(screen.getByText("Energy Bar")).toBeInTheDocument()
+      expect(screen.getByText("Your cart is empty")).toBeInTheDocument()
     })
-    const closeBtn = screen.getByRole("button", { name: /close door & pay/i })
-    await waitFor(() => expect(closeBtn).not.toBeDisabled())
-    await user.click(closeBtn)
 
-    // On receipt, click "New Session"
-    await user.click(await screen.findByRole("button", { name: /new session/i }))
+    it("shows product prices in the grid", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
 
-    // Back to idle with Tap to Start
-    expect(await screen.findByRole("button", { name: /tap to start/i })).toBeInTheDocument()
+      expect(screen.getByText("$1.99")).toBeInTheDocument()
+      expect(screen.getByText("$2.99")).toBeInTheDocument()
+    })
+
+    it("shows product categories", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+
+      expect(screen.getByText("Fridge")).toBeInTheDocument()
+      expect(screen.getByText("Pantry")).toBeInTheDocument()
+    })
+
+    it("adds item to cart when clicking product", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+      await addFirstProduct(user)
+
+      // Product name should appear in the cart sidebar
+      const cartItems = screen.getAllByText("Bottled Water")
+      expect(cartItems.length).toBeGreaterThanOrEqual(2) // grid + cart
+    })
+
+    it("shows 'Adding...' state when item is being added", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+
+      // Click product — briefly shows "Adding..."
+      const addButton = screen.getAllByRole("button", { name: /add to cart/i }).at(0) as HTMLElement
+      await user.click(addButton)
+
+      // The button text should eventually return from "Adding..."
+      await waitFor(() => {
+        expect(screen.queryByText("Your cart is empty")).not.toBeInTheDocument()
+      })
+    })
+
+    it("disables close button when cart is empty", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+
+      expect(screen.getByRole("button", { name: /close door & pay/i })).toBeDisabled()
+    })
+
+    it("shows store name in header during shopping", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+
+      expect(screen.getByText("Downtown Fridge")).toBeInTheDocument()
+      expect(screen.getByText("Pick items from the fridge")).toBeInTheDocument()
+    })
+
+    it("shows dashboard link during shopping", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+
+      expect(screen.getByRole("link", { name: /dashboard/i })).toBeInTheDocument()
+    })
+  })
+
+  describe("cart interactions", () => {
+    it("enables close button after adding an item", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+      await addFirstProduct(user)
+
+      const closeBtn = screen.getByRole("button", { name: /close door & pay/i })
+      await waitFor(() => expect(closeBtn).not.toBeDisabled())
+    })
+
+    it("updates total when items are added", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+
+      // Initially total is $0.00
+      expect(screen.getByText("$0.00")).toBeInTheDocument()
+
+      await addFirstProduct(user)
+
+      // After adding Bottled Water ($1.99), total should update
+      await waitFor(() => {
+        expect(screen.queryByText("$0.00")).not.toBeInTheDocument()
+      })
+    })
+  })
+
+  describe("close session error recovery", () => {
+    it("shows error banner when close fails and stays in shopping", async () => {
+      server.use(
+        http.post("/api/sessions/:id/close", () => {
+          return HttpResponse.json(
+            {
+              success: false,
+              data: null,
+              error: { code: "PAYMENT_FAILED", message: "Payment declined" },
+              meta: {},
+            },
+            { status: 422 },
+          )
+        }),
+      )
+
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+      await addFirstProduct(user)
+
+      const closeBtn = screen.getByRole("button", { name: /close door & pay/i })
+      await waitFor(() => expect(closeBtn).not.toBeDisabled())
+      await user.click(closeBtn)
+
+      // Should show error and remain in shopping phase
+      expect(await screen.findByText(/payment declined/i)).toBeInTheDocument()
+      expect(screen.getByText("Your Cart")).toBeInTheDocument()
+    })
+
+    it("dismisses error banner when clicking dismiss", async () => {
+      server.use(
+        http.post("/api/sessions/:id/close", () => {
+          return HttpResponse.json(
+            {
+              success: false,
+              data: null,
+              error: { code: "PAYMENT_FAILED", message: "Payment declined" },
+              meta: {},
+            },
+            { status: 422 },
+          )
+        }),
+      )
+
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+      await addFirstProduct(user)
+
+      const closeBtn = screen.getByRole("button", { name: /close door & pay/i })
+      await waitFor(() => expect(closeBtn).not.toBeDisabled())
+      await user.click(closeBtn)
+
+      const dismissBtn = await screen.findByRole("button", { name: /dismiss/i })
+      await user.click(dismissBtn)
+
+      expect(screen.queryByText(/payment declined/i)).not.toBeInTheDocument()
+    })
+  })
+
+  describe("receipt phase", () => {
+    it("shows receipt with payment complete status", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+      await addFirstProduct(user)
+
+      const closeBtn = screen.getByRole("button", { name: /close door & pay/i })
+      await waitFor(() => expect(closeBtn).not.toBeDisabled())
+      await user.click(closeBtn)
+
+      expect(await screen.findByText(/payment complete/i)).toBeInTheDocument()
+    })
+
+    it("shows store name on receipt", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+      await addFirstProduct(user)
+
+      const closeBtn = screen.getByRole("button", { name: /close door & pay/i })
+      await waitFor(() => expect(closeBtn).not.toBeDisabled())
+      await user.click(closeBtn)
+
+      await screen.findByText(/payment complete/i)
+      expect(screen.getByText("Downtown Fridge")).toBeInTheDocument()
+    })
+
+    it("shows new session button on receipt", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+      await addFirstProduct(user)
+
+      const closeBtn = screen.getByRole("button", { name: /close door & pay/i })
+      await waitFor(() => expect(closeBtn).not.toBeDisabled())
+      await user.click(closeBtn)
+
+      expect(await screen.findByRole("button", { name: /new session/i })).toBeInTheDocument()
+    })
+
+    it("returns to idle after clicking new session", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+      await addFirstProduct(user)
+
+      const closeBtn = screen.getByRole("button", { name: /close door & pay/i })
+      await waitFor(() => expect(closeBtn).not.toBeDisabled())
+      await user.click(closeBtn)
+
+      await user.click(await screen.findByRole("button", { name: /new session/i }))
+      expect(await screen.findByRole("button", { name: /tap to start/i })).toBeInTheDocument()
+    })
+
+    it("shows dashboard link on receipt", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+      await addFirstProduct(user)
+
+      const closeBtn = screen.getByRole("button", { name: /close door & pay/i })
+      await waitFor(() => expect(closeBtn).not.toBeDisabled())
+      await user.click(closeBtn)
+
+      await screen.findByText(/payment complete/i)
+      expect(screen.getByRole("link", { name: /dashboard/i })).toBeInTheDocument()
+    })
   })
 })

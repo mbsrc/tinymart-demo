@@ -8,6 +8,7 @@ import {
   mockSessionItem,
   mockStore,
   mockStore2,
+  mockStoreProduct1,
   mockTransaction,
 } from "./data"
 
@@ -52,9 +53,57 @@ export const handlers = [
     })
   }),
 
+  // Store products (authenticated)
+  http.post("/api/stores/:storeId/products", async ({ request }) => {
+    const body = (await request.json()) as {
+      product_id: string
+      quantity_on_hand?: number
+      low_stock_threshold?: number
+    }
+    const product = body.product_id === "prod-1" ? mockProduct1 : mockProduct2
+    return HttpResponse.json(
+      envelope({
+        ...mockStoreProduct1,
+        id: `sp-new-${Date.now()}`,
+        product_id: body.product_id,
+        quantity_on_hand: body.quantity_on_hand ?? 10,
+        low_stock_threshold: body.low_stock_threshold ?? 5,
+        Product: product,
+      }),
+      { status: 201 },
+    )
+  }),
+
+  http.patch("/api/stores/:storeId/products/:productId", async ({ request }) => {
+    const body = (await request.json()) as {
+      quantity_on_hand?: number
+      low_stock_threshold?: number
+    }
+    return HttpResponse.json(
+      envelope({
+        ...mockStoreProduct1,
+        quantity_on_hand: body.quantity_on_hand ?? mockStoreProduct1.quantity_on_hand,
+        low_stock_threshold: body.low_stock_threshold ?? mockStoreProduct1.low_stock_threshold,
+      }),
+    )
+  }),
+
   // Products (authenticated)
   http.get("/api/products", () => {
     return HttpResponse.json(envelope([mockProduct1, mockProduct2]))
+  }),
+
+  http.post("/api/products", async ({ request }) => {
+    const body = (await request.json()) as { name: string; sku: string }
+    return HttpResponse.json(
+      envelope({
+        ...mockProduct1,
+        id: `prod-new-${Date.now()}`,
+        name: body.name,
+        sku: body.sku,
+      }),
+      { status: 201 },
+    )
   }),
 
   // Kiosk store (public)
@@ -89,11 +138,13 @@ export const handlers = [
 
   http.post("/api/sessions/:id/items", async ({ request }) => {
     const body = (await request.json()) as { product_id: string; action: "added" | "removed" }
+    const product = body.product_id === "prod-1" ? mockProduct1 : mockProduct2
     const newItem = {
       ...mockSessionItem,
       id: `item-${Date.now()}`,
       product_id: body.product_id,
       action: body.action,
+      Product: product,
     }
     sessionItems.push(newItem)
     return HttpResponse.json(envelope(newItem), { status: 201 })
