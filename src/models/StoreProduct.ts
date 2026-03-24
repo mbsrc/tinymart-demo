@@ -8,13 +8,14 @@ interface StoreProductAttributes {
   product_id: string
   quantity_on_hand: number
   low_stock_threshold: number
+  version: number
   created_at?: Date
   updated_at?: Date
 }
 
 type StoreProductCreationAttributes = Omit<
   StoreProductAttributes,
-  "id" | "quantity_on_hand" | "low_stock_threshold" | "created_at" | "updated_at"
+  "id" | "quantity_on_hand" | "low_stock_threshold" | "version" | "created_at" | "updated_at"
 > & {
   quantity_on_hand?: number
   low_stock_threshold?: number
@@ -26,6 +27,7 @@ class StoreProduct extends Model<StoreProductAttributes, StoreProductCreationAtt
   declare product_id: string
   declare quantity_on_hand: number
   declare low_stock_threshold: number
+  declare version: number
   declare readonly created_at: Date
   declare readonly updated_at: Date
 
@@ -66,6 +68,11 @@ class StoreProduct extends Model<StoreProductAttributes, StoreProductCreationAtt
           type: DataTypes.INTEGER,
           allowNull: false,
           defaultValue: 5,
+        },
+        version: {
+          type: DataTypes.INTEGER,
+          allowNull: false,
+          defaultValue: 0,
         },
         created_at: DataTypes.DATE,
         updated_at: DataTypes.DATE,
