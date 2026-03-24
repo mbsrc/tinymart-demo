@@ -1,7 +1,7 @@
 {
   "name": "tinymart",
   "description": "Miniature smart store platform — backend reliability demo",
-  "repository": "https://github.com/you/tinymart",
+  "repository": "https://github.com/mbsrc/tinymart-demo",
   "keywords": ["node", "express", "typescript", "stripe", "postgresql"],
   "stack": "heroku-24",
   "buildpacks": [{ "url": "heroku/nodejs" }],
