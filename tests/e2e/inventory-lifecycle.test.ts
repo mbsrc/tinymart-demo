@@ -191,4 +191,54 @@ describe("Inventory lifecycle", () => {
       expect(iceCream.quantity_on_hand).toBe(8)
     })
   })
+
+  describe("Insufficient stock guard", () => {
+    let storeId: string
+    let productId: string
+
+    it("sets up a product with 5 units in stock", async () => {
+      const prodRes = await request(app)
+        .post("/api/products")
+        .set({ ...headers, ...idemKey() })
+        .send({ name: "Energy Bar", sku: "BAR-001", price_cents: 250, category: "pantry" })
+
+      expect(prodRes.status).toBe(201)
+      productId = prodRes.body.data.id
+
+      const storeRes = await request(app)
+        .post("/api/stores")
+        .set({ ...headers, ...idemKey() })
+        .send({ name: "Guard Test Store" })
+
+      expect(storeRes.status).toBe(201)
+      storeId = storeRes.body.data.id
+
+      const addRes = await request(app)
+        .post(`/api/stores/${storeId}/products`)
+        .set({ ...headers, ...idemKey() })
+        .send({ product_id: productId, quantity_on_hand: 5 })
+
+      expect(addRes.status).toBe(201)
+      expect(addRes.body.data.quantity_on_hand).toBe(5)
+    })
+
+    it("rejects deduction exceeding available stock", async () => {
+      const res = await request(app)
+        .patch(`/api/stores/${storeId}/products/${productId}`)
+        .set({ ...headers, ...idemKey() })
+        .send({ quantity_on_hand: -5 })
+
+      expect(res.status).toBe(409)
+      expect(res.body.error.code).toBe("INSUFFICIENT_STOCK")
+    })
+
+    it("confirms quantity is still 5 after rejected deduction", async () => {
+      const res = await request(app).get(`/api/stores/${storeId}`).set(headers)
+
+      const sp = res.body.data.StoreProducts.find(
+        (s: Record<string, unknown>) => s.product_id === productId,
+      )
+      expect(sp.quantity_on_hand).toBe(5)
+    })
+  })
 })
