@@ -1,40 +1,75 @@
+import path from "node:path"
+import cors from "cors"
 import express from "express"
+import helmet from "helmet"
+import { config } from "./config/index.js"
 import { authenticateOperator } from "./middleware/auth.js"
 import { correlationId } from "./middleware/correlationId.js"
+import { degradation } from "./middleware/degradation.js"
 import { errorHandler } from "./middleware/errorHandler.js"
+import { idempotency } from "./middleware/idempotency.js"
 import { notFound } from "./middleware/notFound.js"
+import { rateLimiter } from "./middleware/rateLimiter.js"
 import { requestLogger } from "./middleware/requestLogger.js"
 import { healthRouter } from "./routes/health.js"
 import { productsRouter } from "./routes/products.js"
+import { sessionsRouter } from "./routes/sessions.js"
 import { storesRouter } from "./routes/stores.js"
+import { transactionsRouter } from "./routes/transactions.js"
 
 const app = express()
 
-// 1. Trust proxy — must precede rate limiter
+// 1. Security headers
+app.use(helmet())
+
+// 2. Trust proxy — must precede rate limiter
 app.set("trust proxy", 1)
 
-// 2. Body parsers
-app.use(express.json())
+// 3. CORS
+app.use(
+  cors({
+    origin: config.corsAllowedOrigins.includes("*") ? "*" : config.corsAllowedOrigins,
+  }),
+)
 
-// 3. Correlation ID — all subsequent middleware depends on it
+// 4. Body parsers
+app.use(express.json({ limit: "100kb" }))
+
+// 5. Correlation ID — all subsequent middleware depends on it
 app.use(correlationId)
 
-// 4. Request logger — logs on res finish to capture status + duration
+// 6. Request logger — logs on res finish to capture status + duration
 app.use(requestLogger)
 
-// 5. Health routes — before rate limiter so monitors aren't throttled
+// 7. Health routes — before rate limiter so monitors aren't throttled
 app.use(healthRouter)
 
-// 6. Rate limiter (V2)
+// 8. Rate limiter — after health routes so monitors aren't throttled
+app.use(rateLimiter)
 
-// 7. API routes
-app.use("/api/stores", authenticateOperator, storesRouter)
-app.use("/api/products", authenticateOperator, productsRouter)
+// 9. Degradation context — attaches dependency status to each request
+app.use(degradation)
 
-// 8. 404 handler (3-arg)
+// 10. API routes
+app.use("/api/stores", authenticateOperator, idempotency, storesRouter)
+app.use("/api/products", authenticateOperator, idempotency, productsRouter)
+app.use("/api/sessions", idempotency, sessionsRouter)
+app.use("/api/transactions", authenticateOperator, transactionsRouter)
+
+// 11. Static file serving + SPA catch-all (production only)
+if (config.nodeEnv === "production") {
+  const clientDir = path.join(import.meta.dirname, "client")
+  app.use(express.static(clientDir))
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api") || req.path.startsWith("/health")) return next()
+    res.sendFile(path.join(clientDir, "index.html"))
+  })
+}
+
+// 12. 404 handler (3-arg)
 app.use(notFound)
 
-// 9. Error handler (4-arg) — always last
+// 12. Error handler (4-arg) — always last
 app.use(errorHandler)
 
 export { app }

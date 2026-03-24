@@ -36,7 +36,7 @@ export default {
         id: operatorId,
         name: "TinyMart Demo",
         email: "demo@tinymart.dev",
-        api_key: uuid(),
+        api_key: "tinymart-demo-key-2026",
         created_at: now,
         updated_at: now,
       },

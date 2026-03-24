@@ -1,6 +1,9 @@
 import type { Request, Response } from "express"
 import { Router } from "express"
-import { sequelize } from "../models/index.js"
+import { getJobQueue } from "../jobs/queue.js"
+import { JobFailure } from "../models/index.js"
+import { dependencyRegistry } from "../services/dependencyRegistry.js"
+import { stripeCircuitBreaker } from "../services/stripe.js"
 import { envelope } from "../utils/envelope.js"
 
 const router = Router()
@@ -16,24 +19,38 @@ router.get("/health", (req: Request, res: Response) => {
 })
 
 // Readiness — can we serve traffic?
+// Returns 200 if database is up (core dependency). Non-critical deps (Stripe, job queue)
+// being down results in status "degraded" but still 200 — the app can serve in reduced capacity.
 router.get("/health/ready", async (req: Request, res: Response) => {
-  const checks: Record<string, string> = {}
+  await dependencyRegistry.checkAll()
+  const statuses = dependencyRegistry.getAllStatuses()
 
-  try {
-    await sequelize.authenticate()
-    checks.database = "ok"
-  } catch {
-    checks.database = "unavailable"
+  const dbHealthy = statuses.database?.status === "healthy"
+  const allHealthy = Object.values(statuses).every((s) => s.status === "healthy")
+
+  let status: string
+  let statusCode: number
+
+  if (!dbHealthy) {
+    status = "unavailable"
+    statusCode = 503
+  } else if (!allHealthy) {
+    status = "degraded"
+    statusCode = 200
+  } else {
+    status = "ready"
+    statusCode = 200
   }
 
-  const allHealthy = Object.values(checks).every((v) => v === "ok")
-  const statusCode = allHealthy ? 200 : 503
+  const checks = Object.fromEntries(
+    Object.entries(statuses).map(([name, info]) => [name, info.status]),
+  )
 
   res
     .status(statusCode)
     .json(
       envelope(
-        { status: allHealthy ? "ready" : "degraded", checks },
+        { status, checks },
         { correlation_id: req.correlationId, timestamp: new Date().toISOString() },
       ),
     )
@@ -41,23 +58,39 @@ router.get("/health/ready", async (req: Request, res: Response) => {
 
 // Detailed — full diagnostics
 router.get("/health/detailed", async (req: Request, res: Response) => {
-  const checks: Record<string, string> = {}
+  await dependencyRegistry.checkAll()
+  const statuses = dependencyRegistry.getAllStatuses()
 
-  try {
-    await sequelize.authenticate()
-    checks.database = "ok"
-  } catch {
-    checks.database = "unavailable"
+  const dbHealthy = statuses.database?.status === "healthy"
+  const allHealthy = Object.values(statuses).every((s) => s.status === "healthy")
+  const statusCode = dbHealthy ? 200 : 503
+
+  const boss = getJobQueue()
+  let jobQueue: Record<string, unknown> = { status: "not_started" }
+
+  if (boss) {
+    try {
+      const queues = await boss.getQueues()
+      const deadLetterCount = await JobFailure.count()
+      jobQueue = {
+        status: "running",
+        queues: queues.map((q) => ({ name: q.name, policy: q.policy })),
+        dead_letter_count: deadLetterCount,
+      }
+    } catch {
+      jobQueue = { status: "error" }
+    }
   }
-
-  const allHealthy = Object.values(checks).every((v) => v === "ok")
-  const statusCode = allHealthy ? 200 : 503
 
   res.status(statusCode).json(
     envelope(
       {
         status: allHealthy ? "healthy" : "degraded",
-        checks,
+        dependencies: statuses,
+        circuit_breakers: {
+          stripe: stripeCircuitBreaker.getStatus(),
+        },
+        job_queue: jobQueue,
         uptime: process.uptime(),
         memory: process.memoryUsage(),
       },
