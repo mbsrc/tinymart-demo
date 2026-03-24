@@ -241,4 +241,50 @@ describe("Inventory lifecycle", () => {
       expect(sp.quantity_on_hand).toBe(5)
     })
   })
+
+  describe("Optimistic lock conflict", () => {
+    let storeId: string
+    let productId: string
+
+    it("sets up a product with 10 units", async () => {
+      const prodRes = await request(app)
+        .post("/api/products")
+        .set({ ...headers, ...idemKey() })
+        .send({ name: "Juice Box", sku: "JCE-001", price_cents: 350, category: "fridge" })
+
+      expect(prodRes.status).toBe(201)
+      productId = prodRes.body.data.id
+
+      const storeRes = await request(app)
+        .post("/api/stores")
+        .set({ ...headers, ...idemKey() })
+        .send({ name: "Lock Test Store" })
+
+      expect(storeRes.status).toBe(201)
+      storeId = storeRes.body.data.id
+
+      const addRes = await request(app)
+        .post(`/api/stores/${storeId}/products`)
+        .set({ ...headers, ...idemKey() })
+        .send({ product_id: productId, quantity_on_hand: 10 })
+
+      expect(addRes.status).toBe(201)
+    })
+
+    it("concurrent PATCHes trigger STALE_VERSION on one request", async () => {
+      const patch = (qty: number) =>
+        request(app)
+          .patch(`/api/stores/${storeId}/products/${productId}`)
+          .set({ ...headers, ...idemKey() })
+          .send({ quantity_on_hand: qty })
+
+      const results = await Promise.all([patch(20), patch(30)])
+      const statuses = results.map((r) => r.status).sort()
+
+      expect(statuses).toEqual([200, 409])
+
+      const failed = results.find((r) => r.status === 409)
+      expect(failed?.body.error.code).toBe("STALE_VERSION")
+    })
+  })
 })
