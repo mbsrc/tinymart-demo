@@ -1,10 +1,12 @@
 import { Sequelize } from "sequelize"
 import { databaseConfig } from "../config/database.js"
 import { config } from "../config/index.js"
+import { DeferredCharge } from "./DeferredCharge.js"
 import { IdempotencyKey } from "./IdempotencyKey.js"
 import { InventoryEvent } from "./InventoryEvent.js"
 import { JobFailure } from "./JobFailure.js"
 import { Operator } from "./Operator.js"
+import { PendingJob } from "./PendingJob.js"
 import { Product } from "./Product.js"
 import { Session } from "./Session.js"
 import { SessionItem } from "./SessionItem.js"
@@ -25,6 +27,8 @@ const models = {
   IdempotencyKey,
   InventoryEvent,
   JobFailure,
+  PendingJob,
+  DeferredCharge,
 }
 
 for (const model of Object.values(models)) {
@@ -46,4 +50,6 @@ export {
   IdempotencyKey,
   InventoryEvent,
   JobFailure,
+  PendingJob,
+  DeferredCharge,
 }
