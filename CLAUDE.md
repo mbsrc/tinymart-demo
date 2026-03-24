@@ -4,13 +4,13 @@ tap card → open fridge → grab items → close door → get charged.
 Backend-reliability demo targeting Micromart engineering interviewers.
 
 ## Run Commands
-- Dev Server: `bun dev`
-- Build: `bun build`
-- Start: `bun start`
-- Test: `bun test` / `bun test:watch`
-- Lint/Format: `bun lint` / `bun lint:fix`
-- DB Setup: `bun db:up` (Docker)
-- Migrations: `bun db:migrate` / `bun db:migrate:undo` / `bun db:seed`
+- Dev Server: `bun run dev`
+- Build: `bun run build`
+- Start: `bun run start`
+- Test: `bun run test` / `bun run test:watch`
+- Lint/Format: `bun run lint`
+- DB Setup: `bun run db:up` (Docker)
+- Migrations: `bun run db:migrate` / `bun run db:migrate:undo` / `bun run db:seed`
 
 ## Tech Stack (locked — ask before making changes)
 - Runtime: Node.js 22 + TypeScript (strict mode)

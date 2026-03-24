@@ -3,12 +3,13 @@ import "dotenv/config"
 interface Config {
   databaseUrl: string
   stripeSecretKey: string
-  stripeWebhookSecret: string
+  stripeWebhookSecret: string | undefined
   port: number
   nodeEnv: string
   betterStackSourceToken: string | undefined
   rateLimitWindowMs: number
   rateLimitMaxRequests: number
+  corsAllowedOrigins: string[]
 }
 
 function requireEnv(name: string): string {
@@ -23,12 +24,15 @@ function loadConfig(): Config {
   return {
     databaseUrl: requireEnv("DATABASE_URL"),
     stripeSecretKey: requireEnv("STRIPE_SECRET_KEY"),
-    stripeWebhookSecret: requireEnv("STRIPE_WEBHOOK_SECRET"),
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     port: Number.parseInt(requireEnv("PORT"), 10),
     nodeEnv: requireEnv("NODE_ENV"),
     betterStackSourceToken: process.env.BETTERSTACK_SOURCE_TOKEN,
     rateLimitWindowMs: Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000", 10),
     rateLimitMaxRequests: Number.parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "100", 10),
+    corsAllowedOrigins: process.env.CORS_ALLOWED_ORIGINS
+      ? process.env.CORS_ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+      : ["*"],
   }
 }
 
