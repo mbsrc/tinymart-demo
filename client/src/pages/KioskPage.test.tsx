@@ -188,6 +188,110 @@ describe("KioskPage", () => {
         expect(screen.queryByText("$0.00")).not.toBeInTheDocument()
       })
     })
+
+    it("can remove an item from the cart", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+      await addFirstProduct(user)
+
+      // Cart has item — find the minus button
+      const removeBtn = screen.getByRole("button", { name: "-" })
+      await user.click(removeBtn)
+
+      // Cart should be empty again after removing
+      await waitFor(() => {
+        expect(screen.getByText("Your cart is empty")).toBeInTheDocument()
+      })
+    })
+
+    it("disables close button after removing all items", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+      await addFirstProduct(user)
+
+      // Remove the item
+      const removeBtn = screen.getByRole("button", { name: "-" })
+      await user.click(removeBtn)
+
+      // Close button should be disabled again
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /close door & pay/i })).toBeDisabled()
+      })
+    })
+
+    it("can add multiple different products", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+
+      // Add first product
+      const addButtons = screen.getAllByRole("button", { name: /add to cart/i })
+      await user.click(addButtons[0] as HTMLElement)
+      await waitFor(() => {
+        expect(screen.queryByText("Your cart is empty")).not.toBeInTheDocument()
+      })
+
+      // Add second product
+      await user.click(addButtons[1] as HTMLElement)
+
+      // Both products should be in the cart
+      await waitFor(() => {
+        const minusButtons = screen.getAllByRole("button", { name: "-" })
+        expect(minusButtons.length).toBe(2)
+      })
+    })
+
+    it("increments quantity when adding same product twice", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+
+      // Add first product twice
+      const addButton = screen.getAllByRole("button", { name: /add to cart/i }).at(0) as HTMLElement
+      await user.click(addButton)
+      await waitFor(() => {
+        expect(screen.queryByText("Your cart is empty")).not.toBeInTheDocument()
+      })
+
+      // Add again via the + button in cart
+      const plusBtn = screen.getByRole("button", { name: "+" })
+      await user.click(plusBtn)
+
+      // Quantity should be 2
+      await waitFor(() => {
+        expect(screen.getByText("2")).toBeInTheDocument()
+      })
+    })
+
+    it("decrements quantity without removing when qty > 1", async () => {
+      const user = userEvent.setup()
+      renderKiosk()
+      await startSession(user)
+
+      // Add product twice
+      const addButton = screen.getAllByRole("button", { name: /add to cart/i }).at(0) as HTMLElement
+      await user.click(addButton)
+      await waitFor(() => {
+        expect(screen.queryByText("Your cart is empty")).not.toBeInTheDocument()
+      })
+      const plusBtn = screen.getByRole("button", { name: "+" })
+      await user.click(plusBtn)
+      await waitFor(() => {
+        expect(screen.getByText("2")).toBeInTheDocument()
+      })
+
+      // Remove one — should go to qty 1, not remove entirely
+      const removeBtn = screen.getByRole("button", { name: "-" })
+      await user.click(removeBtn)
+
+      await waitFor(() => {
+        expect(screen.getByText("1")).toBeInTheDocument()
+      })
+      // Item still in cart
+      expect(screen.queryByText("Your cart is empty")).not.toBeInTheDocument()
+    })
   })
 
   describe("close session error recovery", () => {

@@ -124,4 +124,29 @@ describe("App routing", () => {
     })
     expect(localStorage.getItem("tinymart-api-key")).toBe("valid-key")
   })
+
+  it("disconnect clears API key and shows prompt", async () => {
+    const user = userEvent.setup()
+    renderApp("/", "test-key")
+
+    await screen.findAllByText("Downtown Fridge")
+    await user.click(screen.getByRole("button", { name: /disconnect/i }))
+
+    // Auth prompt should reappear
+    expect(await screen.findByText("Connect to TinyMart")).toBeInTheDocument()
+    expect(localStorage.getItem("tinymart-api-key")).toBeNull()
+  })
+
+  it("sidebar shows kiosk links for each store", async () => {
+    renderApp("/", "test-key")
+    await screen.findAllByText("Downtown Fridge")
+
+    // Kiosk section header
+    expect(screen.getByText("Kiosk")).toBeInTheDocument()
+    // Links to kiosk for each store
+    const kioskLinks = screen
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("href")?.startsWith("/kiosk/"))
+    expect(kioskLinks.length).toBe(2)
+  })
 })

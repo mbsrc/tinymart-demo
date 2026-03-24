@@ -219,4 +219,35 @@ describe("StoreDetailPage", () => {
       expect(screen.getByText(/create new product/i)).toBeInTheDocument()
     })
   })
+
+  describe("modal close behaviors", () => {
+    it("closes edit modal with Escape key", async () => {
+      const user = userEvent.setup()
+      renderStoreDetail()
+      await screen.findByText("Bottled Water")
+      const editButtons = screen.getAllByRole("button", { name: /edit/i })
+      await user.click(editButtons[0] as HTMLElement)
+
+      await screen.findByText("Edit Inventory")
+      await user.keyboard("{Escape}")
+
+      await waitFor(() => {
+        expect(screen.queryByText("Edit Inventory")).not.toBeInTheDocument()
+      })
+    })
+
+    it("closes add product modal with Escape key", async () => {
+      const user = userEvent.setup()
+      renderStoreDetail()
+      await screen.findByText("Downtown Fridge")
+      await user.click(screen.getByRole("button", { name: /add product/i }))
+
+      await screen.findByText("Add Product to Store")
+      await user.keyboard("{Escape}")
+
+      await waitFor(() => {
+        expect(screen.queryByText("Add Product to Store")).not.toBeInTheDocument()
+      })
+    })
+  })
 })
