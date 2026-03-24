@@ -17,6 +17,23 @@ import { reconcileCart } from "../utils/reconcileCart.js"
 
 const router = Router()
 
+// GET /api/sessions/store/:storeId — public kiosk endpoint to get store + products
+router.get(
+  "/store/:storeId",
+  asyncHandler(async (req, res) => {
+    const storeId = req.params.storeId as string
+    const store = await Store.findByPk(storeId, {
+      include: [{ model: StoreProduct, include: [Product] }],
+    })
+
+    if (!store) {
+      throw new AppError(404, "STORE_NOT_FOUND", "Store not found")
+    }
+
+    res.json(envelope(store, buildMeta(req)))
+  }),
+)
+
 // POST /api/sessions — open a new shopping session
 router.post(
   "/",

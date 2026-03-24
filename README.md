@@ -69,21 +69,23 @@ cp .env.example .env          # fill in your Stripe test keys
 bun run db:up                 # starts PostgreSQL via Docker
 bun run db:migrate            # run all migrations
 bun run db:seed               # creates demo operator, 2 stores, 10 products
-bun run dev                   # starts API at http://localhost:3001
+bun run dev                   # starts API + frontend at http://localhost:5173
 ```
 
-To get the demo operator's API key:
+### Demo Credentials
 
-```bash
-psql "$DATABASE_URL" -t -c "SELECT api_key FROM operators LIMIT 1"
-```
+- **API Key:** `tinymart-demo-key-2026` (seeded automatically)
+- **Dashboard:** http://localhost:5173 — enter the API key when prompted
+- **Kiosk:** http://localhost:5173/kiosk/&lt;store-id&gt; — tap to start shopping
+- **Health:** http://localhost:5173/health — system monitoring (no key needed)
 
 ## Tech Stack
 
 | Layer | Choice |
 |-------|--------|
 | Runtime | Node.js 22 + TypeScript (strict) |
-| Framework | Express.js |
+| Backend | Express.js |
+| Frontend | React 19 + Vite + Tailwind CSS 4 + TanStack Query |
 | Database | PostgreSQL + Sequelize V6 ORM |
 | Payments | Stripe (test mode) |
 | Background Jobs | pg-boss (Postgres-backed, no Redis) |

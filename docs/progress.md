@@ -24,4 +24,5 @@
 - [x] 17. Heroku deployment config
 - [x] 18. Final review pass
 - [x] 19. End-to-end tests
-- [ ] 20. UI preparation (CORS, session endpoints, security hardening)
+- [x] 20. UI preparation (CORS, session endpoints, security hardening)
+- [x] 21. Frontend UI (React + Vite + Tailwind)

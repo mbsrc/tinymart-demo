@@ -15,6 +15,13 @@ export async function chargeOrDefer(
   sessionId: string,
   params: Stripe.PaymentIntentCreateParams,
 ): Promise<ChargeResult> {
+  if (process.env.E2E_MOCK_STRIPE === "true") {
+    return {
+      outcome: "charged" as const,
+      paymentIntent: { id: `pi_e2e_mock_${Date.now()}` } as Stripe.PaymentIntent,
+    }
+  }
+
   const circuitState = stripeCircuitBreaker.getState()
 
   if (circuitState === "closed" || circuitState === "half_open") {
