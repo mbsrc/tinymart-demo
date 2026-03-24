@@ -1,0 +1,44 @@
+{
+  "name": "tinymart",
+  "description": "Miniature smart store platform — backend reliability demo",
+  "repository": "https://github.com/you/tinymart",
+  "keywords": ["node", "express", "typescript", "stripe", "postgresql"],
+  "stack": "heroku-24",
+  "buildpacks": [{ "url": "heroku/nodejs" }],
+  "env": {
+    "NODE_ENV": {
+      "value": "production"
+    },
+    "STRIPE_SECRET_KEY": {
+      "description": "Stripe test secret key (sk_test_...)",
+      "required": true
+    },
+    "STRIPE_WEBHOOK_SECRET": {
+      "description": "Stripe webhook signing secret (whsec_...)",
+      "required": true
+    },
+    "BETTERSTACK_SOURCE_TOKEN": {
+      "description": "BetterStack Logtail source token (optional — falls back to stdout)",
+      "required": false
+    },
+    "RATE_LIMIT_WINDOW_MS": {
+      "description": "Rate limit window in milliseconds",
+      "value": "60000",
+      "required": false
+    },
+    "RATE_LIMIT_MAX_REQUESTS": {
+      "description": "Max requests per rate limit window",
+      "value": "100",
+      "required": false
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:essential-0",
+      "as": "DATABASE"
+    }
+  ],
+  "scripts": {
+    "postdeploy": "npx tsx node_modules/.bin/sequelize-cli db:migrate && npx tsx node_modules/.bin/sequelize-cli db:seed:all"
+  }
+}
