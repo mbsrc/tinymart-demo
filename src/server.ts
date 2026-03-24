@@ -1,7 +1,35 @@
 import { app } from "./app.js"
 import { config } from "./config/index.js"
-import { startJobQueue, stopJobQueue } from "./jobs/queue.js"
+import { getJobQueue, startJobQueue, stopJobQueue } from "./jobs/queue.js"
+import { sequelize } from "./models/index.js"
+import { dependencyRegistry } from "./services/dependencyRegistry.js"
+import { stripeCircuitBreaker } from "./services/stripe.js"
+import type { CircuitState } from "./utils/circuitBreaker.js"
 import { logger } from "./utils/logger.js"
+
+const CIRCUIT_STATE_TO_STATUS: Record<CircuitState, "healthy" | "degraded" | "unavailable"> = {
+  closed: "healthy",
+  half_open: "degraded",
+  open: "unavailable",
+}
+
+function registerDependencies(): void {
+  dependencyRegistry.register("database", async () => {
+    await sequelize.authenticate()
+    return "healthy"
+  })
+
+  dependencyRegistry.register("stripe", async () => {
+    return CIRCUIT_STATE_TO_STATUS[stripeCircuitBreaker.getState()]
+  })
+
+  dependencyRegistry.register("job_queue", async () => {
+    const boss = getJobQueue()
+    if (!boss) return "unavailable"
+    // pg-boss exposes no lightweight ping — if we got here, the instance exists and started
+    return "healthy"
+  })
+}
 
 const server = app.listen(config.port, async () => {
   logger.info(`TinyMart API listening on port ${config.port}`, {
@@ -16,10 +44,14 @@ const server = app.listen(config.port, async () => {
       error: error instanceof Error ? error.message : String(error),
     })
   }
+
+  registerDependencies()
+  dependencyRegistry.startMonitoring()
 })
 
 async function shutdown(signal: string) {
   logger.info(`${signal} received, shutting down gracefully`)
+  dependencyRegistry.stopMonitoring()
 
   server.close(async () => {
     await stopJobQueue()
