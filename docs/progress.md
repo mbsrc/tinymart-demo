@@ -12,7 +12,7 @@
 - [x] 7. Idempotency middleware
 - [x] 8. Circuit breaker + retry utilities
 - [x] 9. Background jobs (pg-boss)
-- [ ] 10. Inventory event sourcing + optimistic locking
+- [x] 10. Inventory event sourcing + optimistic locking
 - [ ] 11. Rate limiting
 - [x] 12. Structured logging + correlation IDs
 - [x] 13. Health check endpoints

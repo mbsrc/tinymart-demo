@@ -1,4 +1,5 @@
 import { DataTypes, Model, type Sequelize } from "sequelize"
+import type { InventoryEvent } from "./InventoryEvent.js"
 import type { Product } from "./Product.js"
 import type { Store } from "./Store.js"
 
@@ -33,14 +34,17 @@ class StoreProduct extends Model<StoreProductAttributes, StoreProductCreationAtt
 
   declare Store?: Store
   declare Product?: Product
+  declare InventoryEvents?: InventoryEvent[]
 
   static associate(models: Record<string, unknown>) {
-    const { Store, Product } = models as {
+    const { Store, Product, InventoryEvent } = models as {
       Store: typeof import("./Store.js").Store
       Product: typeof import("./Product.js").Product
+      InventoryEvent: typeof import("./InventoryEvent.js").InventoryEvent
     }
     StoreProduct.belongsTo(Store, { foreignKey: "store_id" })
     StoreProduct.belongsTo(Product, { foreignKey: "product_id" })
+    StoreProduct.hasMany(InventoryEvent, { foreignKey: "store_product_id" })
   }
 
   static initialize(sequelize: Sequelize) {
