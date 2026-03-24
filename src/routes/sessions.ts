@@ -227,4 +227,27 @@ router.post(
   }),
 )
 
+// GET /api/sessions/:id/transaction — get transaction for a session
+router.get(
+  "/:id/transaction",
+  asyncHandler(async (req, res) => {
+    const sessionId = req.params.id as string
+    const session = await Session.findByPk(sessionId)
+
+    if (!session) {
+      throw new AppError(404, "SESSION_NOT_FOUND", "Session not found")
+    }
+
+    const transaction = await Transaction.findOne({
+      where: { session_id: sessionId },
+    })
+
+    if (!transaction) {
+      throw new AppError(404, "TRANSACTION_NOT_FOUND", "No transaction found for this session")
+    }
+
+    res.json(envelope(transaction, buildMeta(req)))
+  }),
+)
+
 export { router as sessionsRouter }
