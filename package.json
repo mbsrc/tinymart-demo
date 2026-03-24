@@ -24,8 +24,10 @@
   },
   "dependencies": {
     "@logtail/node": "^0.5.2",
+    "cors": "^2.8.6",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "helmet": "^8.1.0",
     "pg": "^8.13.3",
     "pg-boss": "^12.14.0",
     "pg-hstore": "^2.3.4",
@@ -37,6 +39,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.0",
     "@types/node": "^22.12.0",
     "@types/supertest": "^6.0.2",

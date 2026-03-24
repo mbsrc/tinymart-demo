@@ -23,4 +23,5 @@
 - [x] 16. README + architecture docs
 - [x] 17. Heroku deployment config
 - [x] 18. Final review pass
-- [ ] 19. End-to-end tests
+- [x] 19. End-to-end tests
+- [ ] 20. UI preparation (CORS, session endpoints, security hardening)
