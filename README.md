@@ -237,9 +237,9 @@ heroku addons:create heroku-postgresql:essential-0
 # Set required env vars
 heroku config:set NODE_ENV=production
 heroku config:set STRIPE_SECRET_KEY=sk_test_...
-heroku config:set STRIPE_WEBHOOK_SECRET=whsec_...
 
-# Optional: BetterStack logging
+# Optional
+heroku config:set STRIPE_WEBHOOK_SECRET=whsec_...
 heroku config:set BETTERSTACK_SOURCE_TOKEN=your_token
 
 # Deploy (from develop branch)
@@ -262,11 +262,11 @@ See [`.env.example`](.env.example) for the full list.
 **Required** (app crashes at startup if missing):
 - `DATABASE_URL` — PostgreSQL connection string
 - `STRIPE_SECRET_KEY` — Stripe test secret key
-- `STRIPE_WEBHOOK_SECRET` — Stripe webhook signing secret
 - `PORT` — Server port (default: 3001)
 - `NODE_ENV` — `development`, `test`, or `production`
 
 **Optional:**
+- `STRIPE_WEBHOOK_SECRET` — Stripe webhook signing secret (required only when receiving webhooks)
 - `BETTERSTACK_SOURCE_TOKEN` — Logtail source token (falls back to stdout)
 - `RATE_LIMIT_WINDOW_MS` — Rate limit window in ms (default: 60000)
 - `RATE_LIMIT_MAX_REQUESTS` — Max requests per window (default: 100)
