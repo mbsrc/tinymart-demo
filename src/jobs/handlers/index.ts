@@ -7,12 +7,15 @@ import { handleReplayPendingJobs } from "./replayPendingJobs.js"
 import { handleSendReceipt } from "./sendReceipt.js"
 
 export async function registerHandlers(boss: PgBoss): Promise<void> {
+  await boss.createQueue("send-receipt")
   await boss.work("send-receipt", handleSendReceipt)
   logger.info("Registered job handler: send-receipt")
 
+  await boss.createQueue("deduct-inventory")
   await boss.work("deduct-inventory", handleDeductInventory)
   logger.info("Registered job handler: deduct-inventory")
 
+  await boss.createQueue("cleanup-expired-idempotency-keys")
   await boss.schedule(
     "cleanup-expired-idempotency-keys",
     "0 * * * *",
@@ -24,6 +27,7 @@ export async function registerHandlers(boss: PgBoss): Promise<void> {
   await boss.work("cleanup-expired-idempotency-keys", handleCleanupIdempotencyKeys)
   logger.info("Registered scheduled job: cleanup-expired-idempotency-keys (hourly)")
 
+  await boss.createQueue("replay-pending-jobs")
   await boss.schedule(
     "replay-pending-jobs",
     "*/5 * * * *",
@@ -35,6 +39,7 @@ export async function registerHandlers(boss: PgBoss): Promise<void> {
   await boss.work("replay-pending-jobs", handleReplayPendingJobs)
   logger.info("Registered scheduled job: replay-pending-jobs (every 5 min)")
 
+  await boss.createQueue("process-deferred-charges")
   await boss.schedule(
     "process-deferred-charges",
     "*/2 * * * *",
