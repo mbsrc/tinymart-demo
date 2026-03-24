@@ -4,6 +4,7 @@ import { correlationId } from "./middleware/correlationId.js"
 import { errorHandler } from "./middleware/errorHandler.js"
 import { idempotency } from "./middleware/idempotency.js"
 import { notFound } from "./middleware/notFound.js"
+import { rateLimiter } from "./middleware/rateLimiter.js"
 import { requestLogger } from "./middleware/requestLogger.js"
 import { healthRouter } from "./routes/health.js"
 import { productsRouter } from "./routes/products.js"
@@ -26,7 +27,8 @@ app.use(requestLogger)
 // 5. Health routes — before rate limiter so monitors aren't throttled
 app.use(healthRouter)
 
-// 6. Rate limiter (V2)
+// 6. Rate limiter — after health routes so monitors aren't throttled
+app.use(rateLimiter)
 
 // 7. API routes
 app.use("/api/stores", authenticateOperator, idempotency, storesRouter)
