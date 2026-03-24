@@ -1,6 +1,6 @@
 # Plan: Phase 2 Step 10 — Inventory Event Sourcing + Optimistic Locking
 
-**Status**: In Progress
+**Status**: Complete
 
 ## Context
 
@@ -182,11 +182,29 @@ Use `makeJob<T>()` helper pattern from `tests/jobs.test.ts`.
 
 ---
 
-## Verification
+## Tests
 
-1. `bun db:migrate` — both new migrations apply cleanly
-2. `bun lint` — clean
-3. `bun test` — all existing + new tests pass
-4. Manual: PATCH a store product's `quantity_on_hand`, verify inventory event is created
-5. Manual: GET event history endpoint returns paginated events
-6. Manual: Simulate optimistic lock conflict (two rapid PATCHes) → second gets 409
+### `tests/inventory.test.ts` — Inventory Service (9 tests)
+
+1. **restock increases quantity and creates event** — restock +5, verify quantity_on_hand and event version
+2. **deduct decreases quantity** — deduct -3, verify negative delta stored on event
+3. **stores reference fields on events** — reserve with referenceId/referenceType/metadata persisted
+4. **creates sequential event versions** — verify versions [1, 2, 3] after three operations
+5. **throws INSUFFICIENT_STOCK** — deduct 999 from 22 available → 409
+6. **optimistic lock rejects stale version writes** — bump version via service, then raw UPDATE with old version → 0 rows
+7. **rejects zero or negative quantity** — quantity=0 → VALIDATION_ERROR
+8. **getEventHistory returns paginated results** — limit=2, verify descending version order + total
+9. **getEventHistory respects offset** — offset=1 returns total-1 events
+
+### `tests/inventory-job.test.ts` — Deduct-Inventory Job (4 tests)
+
+1. **deducts inventory for session items** — 2 added, 1 removed → net 1 deducted per product
+2. **idempotent: skips if already deducted** — second run unchanged, no duplicate events
+3. **skips if session not found** — nonexistent sessionId, no error
+4. **handles multiple products in one session** — water + cola both deducted in single job
+
+## Verification Results
+
+1. `bun run lint` — clean (66 files checked)
+2. `bun run test` — 92 tests pass (13 new), 10 test files, 4.25s
+3. No regressions in existing test suites

@@ -2,6 +2,7 @@ import { Sequelize } from "sequelize"
 import { databaseConfig } from "../config/database.js"
 import { config } from "../config/index.js"
 import { IdempotencyKey } from "./IdempotencyKey.js"
+import { InventoryEvent } from "./InventoryEvent.js"
 import { JobFailure } from "./JobFailure.js"
 import { Operator } from "./Operator.js"
 import { Product } from "./Product.js"
@@ -22,6 +23,7 @@ const models = {
   SessionItem,
   Transaction,
   IdempotencyKey,
+  InventoryEvent,
   JobFailure,
 }
 
@@ -42,5 +44,6 @@ export {
   SessionItem,
   Transaction,
   IdempotencyKey,
+  InventoryEvent,
   JobFailure,
 }
