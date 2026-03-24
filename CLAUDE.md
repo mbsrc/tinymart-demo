@@ -52,3 +52,5 @@ Use `sed -i '' ...` (BSD sed) syntax on macOS, not `sed -i ...` (GNU sed).
 - **Biome bans `!` (non-null assertion)** — Use a helper function that throws instead (e.g. `getOperator(req)` in `src/middleware/auth.ts`). Never use `as` to silence the linter when a runtime check is the right fix.
 - **Test parallelism breaks Sequelize sync** — `sequelize.sync({ force: true })` in concurrent test files causes OID errors. Set `fileParallelism: false` in `vitest.config.ts`.
 - **Express 4 doesn't catch async errors** — All async route handlers must be wrapped (e.g., using an `asyncHandler` helper) to ensure errors are passed to the global error middleware.
+- **pg-boss v12 requires explicit queue creation** — Call `boss.createQueue("name")` before `boss.work()` or `boss.schedule()`. Without this, workers error with "Queue does not exist".
+- **Docker `pg_isready` needs `-d` flag** — `pg_isready -U tinymart` defaults to database `tinymart` (matches username). Always pass `-d tinymart_dev` to target the actual database.

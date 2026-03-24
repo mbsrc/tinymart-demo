@@ -8,13 +8,14 @@ Create well-formatted git commits using conventional commit format with emoji pr
 
 ## Steps
 
-1. Run `bun run lint:fix` to auto-format all changed files
-2. Run `git status` to check staged files
-3. If nothing is staged, list modified and untracked files, then stage only the relevant files by name — NEVER use `git add -A` or `git add .`
-4. Run `git diff --cached --stat` to understand what changed
-5. Analyze the diff for distinct logical changes
-6. If multiple unrelated changes exist, suggest splitting into separate commits
-7. For each commit, write a message using the format below
+1. Run `bun run typecheck` to ensure no TypeScript errors
+2. Run `bun run lint:fix` to auto-format all changed files
+3. Run `git status` to check staged files
+4. If nothing is staged, list modified and untracked files, then stage only the relevant files by name — NEVER use `git add -A` or `git add .`
+5. Run `git diff --cached --stat` to understand what changed
+6. Analyze the diff for distinct logical changes
+7. If multiple unrelated changes exist, suggest splitting into separate commits
+8. For each commit, write a message using the format below
 8. Run `git commit -m "<message>"` — do NOT push
 
 ## Message Format

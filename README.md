@@ -194,6 +194,8 @@ All log entries include timestamp, level, correlation ID, and request context as
 | `bun run lint` | Lint and auto-format |
 | `bun run db:up` | Start PostgreSQL container |
 | `bun run db:down` | Stop PostgreSQL container |
+| `bun run db:dev:create` | Create dev database (idempotent) |
+| `bun run db:test:create` | Create test database (idempotent) |
 | `bun run db:migrate` | Run database migrations |
 | `bun run db:migrate:undo` | Undo last migration |
 | `bun run db:seed` | Seed demo data |
