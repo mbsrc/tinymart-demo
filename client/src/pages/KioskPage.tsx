@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
 import { Link, useParams } from "react-router-dom"
+import { CardEntry } from "../components/kiosk/CardEntry"
 import { CartSidebar } from "../components/kiosk/CartSidebar"
 import { ProductGrid } from "../components/kiosk/ProductGrid"
 import { Receipt } from "../components/kiosk/Receipt"
@@ -17,7 +18,7 @@ import {
 import type { Product } from "../types/api"
 import { reconcileCart } from "../utils/reconcileCart"
 
-type Phase = "idle" | "shopping" | "closing" | "receipt"
+type Phase = "idle" | "card_entry" | "shopping" | "closing" | "receipt"
 
 export default function KioskPage() {
   const { storeId } = useParams<{ storeId: string }>()
@@ -48,17 +49,24 @@ export default function KioskPage() {
   }, [session?.SessionItems])
 
   const handleStart = useCallback(() => {
-    if (!storeId) return
-    createSession.mutate(
-      { store_id: storeId },
-      {
-        onSuccess: (data) => {
-          setSessionId(data.id)
-          setPhase("shopping")
+    setPhase("card_entry")
+  }, [])
+
+  const handlePaymentMethod = useCallback(
+    (paymentMethodId: string) => {
+      if (!storeId) return
+      createSession.mutate(
+        { store_id: storeId, stripe_payment_method_id: paymentMethodId },
+        {
+          onSuccess: (data) => {
+            setSessionId(data.id)
+            setPhase("shopping")
+          },
         },
-      },
-    )
-  }, [storeId, createSession])
+      )
+    },
+    [storeId, createSession],
+  )
 
   const handleAdd = useCallback(
     (productId: string) => {
@@ -118,9 +126,24 @@ export default function KioskPage() {
   if (phase === "idle") {
     return (
       <div className="relative">
-        <TapToStart
+        <TapToStart storeName={store.name} onStart={handleStart} loading={false} />
+        <Link
+          to="/"
+          className="absolute top-4 left-4 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/70 hover:bg-white/20"
+        >
+          &larr; Dashboard
+        </Link>
+      </div>
+    )
+  }
+
+  if (phase === "card_entry") {
+    return (
+      <div className="relative">
+        <CardEntry
           storeName={store.name}
-          onStart={handleStart}
+          onPaymentMethod={handlePaymentMethod}
+          onBack={() => setPhase("idle")}
           loading={createSession.isPending}
         />
         <Link

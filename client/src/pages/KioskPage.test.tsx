@@ -18,6 +18,8 @@ function renderKiosk(storeId = "store-1") {
 
 async function startSession(user: ReturnType<typeof userEvent.setup>) {
   await user.click(await screen.findByRole("button", { name: /tap to start/i }))
+  // Card entry phase — no Stripe key in tests, so skip card entry
+  await user.click(await screen.findByRole("button", { name: /continue to shopping/i }))
   await screen.findByText("Your Cart")
 }
 
