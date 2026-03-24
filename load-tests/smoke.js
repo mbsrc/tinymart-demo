@@ -106,16 +106,15 @@ export function operatorFlow() {
     const storeId = storeList[0].id
 
     // Create a product
-    const createRes = http.post(
-      `${BASE_URL}/api/products`,
-      JSON.stringify({
-        name: `Load Test Item ${uuidv4().slice(0, 8)}`,
-        sku: `LT-${uuidv4().slice(0, 8)}`,
-        price_cents: Math.floor(Math.random() * 900) + 100,
-        category: "pantry",
-      }),
-      { headers: { ...headers, "Idempotency-Key": idempotencyKey } },
-    )
+    const createBody = JSON.stringify({
+      name: `Load Test Item ${uuidv4().slice(0, 8)}`,
+      sku: `LT-${uuidv4().slice(0, 8)}`,
+      price_cents: Math.floor(Math.random() * 900) + 100,
+      category: "pantry",
+    })
+    const createRes = http.post(`${BASE_URL}/api/products`, createBody, {
+      headers: { ...headers, "Idempotency-Key": idempotencyKey },
+    })
     check(createRes, {
       "create product returns 201": (r) => r.status === 201,
     })
@@ -126,16 +125,9 @@ export function operatorFlow() {
     const productId = createRes.json("data.id")
 
     // Replay same request — should get idempotency cache hit
-    const replay = http.post(
-      `${BASE_URL}/api/products`,
-      JSON.stringify({
-        name: `Load Test Item ${uuidv4().slice(0, 8)}`,
-        sku: `LT-${uuidv4().slice(0, 8)}`,
-        price_cents: 100,
-        category: "pantry",
-      }),
-      { headers: { ...headers, "Idempotency-Key": idempotencyKey } },
-    )
+    const replay = http.post(`${BASE_URL}/api/products`, createBody, {
+      headers: { ...headers, "Idempotency-Key": idempotencyKey },
+    })
     if (replay.status === 200) {
       idempotencyHits.add(1)
     }

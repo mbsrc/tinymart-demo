@@ -19,7 +19,7 @@
 - [x] 14. Graceful degradation
 
 ## Phase 3: Polish
-- [ ] 15. Load test script
-- [ ] 16. README + architecture docs
-- [ ] 17. Heroku deployment config
-- [ ] 18. Final review pass
+- [x] 15. Load test script
+- [x] 16. README + architecture docs
+- [x] 17. Heroku deployment config
+- [x] 18. Final review pass
