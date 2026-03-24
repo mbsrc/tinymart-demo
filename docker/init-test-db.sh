@@ -3,4 +3,5 @@ set -e
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
   CREATE DATABASE tinymart_test OWNER $POSTGRES_USER;
+  CREATE DATABASE tinymart_e2e OWNER $POSTGRES_USER;
 EOSQL

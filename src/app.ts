@@ -1,3 +1,4 @@
+import path from "node:path"
 import cors from "cors"
 import express from "express"
 import helmet from "helmet"
@@ -53,7 +54,17 @@ app.use("/api/stores", authenticateOperator, idempotency, storesRouter)
 app.use("/api/products", authenticateOperator, idempotency, productsRouter)
 app.use("/api/sessions", idempotency, sessionsRouter)
 
-// 11. 404 handler (3-arg)
+// 11. Static file serving + SPA catch-all (production only)
+if (config.nodeEnv === "production") {
+  const clientDir = path.join(import.meta.dirname, "client")
+  app.use(express.static(clientDir))
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api") || req.path.startsWith("/health")) return next()
+    res.sendFile(path.join(clientDir, "index.html"))
+  })
+}
+
+// 12. 404 handler (3-arg)
 app.use(notFound)
 
 // 12. Error handler (4-arg) — always last

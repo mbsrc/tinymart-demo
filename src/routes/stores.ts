@@ -32,6 +32,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const stores = await Store.findAll({
       where: { operator_id: getOperator(req).id },
+      include: [{ model: StoreProduct, attributes: ["id"] }],
     })
     res.json(envelope(stores, buildMeta(req)))
   }),
