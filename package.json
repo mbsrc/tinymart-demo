@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "repository": "https://github.com/marcgabriel/tinymart-demo",
+  "repository": "https://github.com/mbsrc/tinymart-demo",
   "scripts": {
     "dev": "concurrently -n api,ui \"tsx watch src/server.ts\" \"cd client && bunx vite\"",
     "dev:api": "tsx watch src/server.ts",

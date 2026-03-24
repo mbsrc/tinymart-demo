@@ -1,4 +1,4 @@
-# TinyMart
+# 🏪 TinyMart
 
 A miniature autonomous smart store platform simulating the full shopping lifecycle:
 **tap card → open fridge → grab items → close door → get charged.**
@@ -20,7 +20,7 @@ Built as a backend reliability demo targeting the Senior Backend Reliability Eng
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 **Prerequisites:** [Node.js 22+](https://nodejs.org/), [bun](https://bun.sh/), [Docker](https://docs.docker.com/get-docker/)
 
@@ -31,10 +31,10 @@ bun install
 cp .env.example .env
 ```
 
-Open `.env` and replace the Stripe keys with your own [Stripe test keys](https://dashboard.stripe.com/test/apikeys):
+For the full Stripe payment flow, open `.env` and replace the Stripe keys with your own [Stripe test keys](https://dashboard.stripe.com/test/apikeys):
 
 ```
-STRIPE_SECRET_KEY=sk_test_...            # required — API won't start without it
+STRIPE_SECRET_KEY=sk_test_...            # optional — placeholder works, payments degrade gracefully
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...  # optional — kiosk skips card entry if missing
 ```
 
@@ -51,7 +51,7 @@ Open **http://localhost:5173** and enter the demo API key: `tinymart-demo-key-20
 
 ---
 
-## Try the Demo
+## 🎮 Try the Demo
 
 Once the server is running, walk through the full lifecycle in about 2 minutes:
 
@@ -67,7 +67,7 @@ Once the server is running, walk through the full lifecycle in about 2 minutes:
 
 ---
 
-## Poke the Reliability
+## 🔨 Poke the Reliability
 
 These curl commands let you test the reliability patterns hands-on. Run them while the dev server is up.
 
@@ -148,7 +148,7 @@ The same ID appears in the response header (`X-Correlation-ID`), the response bo
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────── ─┐
@@ -190,7 +190,7 @@ The same ID appears in the response header (`X-Correlation-ID`), the response bo
 
 ---
 
-## Reliability Patterns
+## 🛡️ Reliability Patterns
 
 | Pattern | What it does | Key files |
 |---------|-------------|-----------|
@@ -206,7 +206,7 @@ The same ID appears in the response header (`X-Correlation-ID`), the response bo
 
 ---
 
-## Data Model
+## 🗃️ Data Model
 
 13 tables in 3 categories:
 
@@ -223,7 +223,7 @@ All migrations are reversible. Foreign keys cascade on delete. Composite unique 
 
 ---
 
-## Tech Stack
+## ⚙️ Tech Stack
 
 | Layer | Choice |
 |-------|--------|
@@ -240,7 +240,7 @@ All migrations are reversible. Foreign keys cascade on delete. Composite unique 
 
 ---
 
-## API Reference
+## 📡 API Reference
 
 All endpoints except `/health/*` require an `x-api-key` header. All mutation endpoints (POST, PATCH) require an `Idempotency-Key` header.
 
@@ -299,7 +299,7 @@ Every response uses a consistent envelope:
 
 ---
 
-## Testing
+## ✅ Testing
 
 ```bash
 bun run test              # backend tests (Vitest + Supertest)
@@ -323,7 +323,7 @@ See [`load-tests/README.md`](load-tests/README.md) for scenario details and thre
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 src/
@@ -363,7 +363,7 @@ docs/
 
 ---
 
-## Scripts
+## 📜 Scripts
 
 | Command | Description |
 |---------|-------------|
@@ -383,7 +383,7 @@ docs/
 
 ---
 
-## Environment Variables
+## 🔐 Environment Variables
 
 See [`.env.example`](.env.example) for the full list with defaults.
 
@@ -392,7 +392,6 @@ See [`.env.example`](.env.example) for the full list with defaults.
 | Variable | Description |
 |----------|-------------|
 | `DATABASE_URL` | PostgreSQL connection string |
-| `STRIPE_SECRET_KEY` | Stripe test secret key (`sk_test_...`) |
 | `PORT` | Server port (default in .env.example: `3001`) |
 | `NODE_ENV` | `development`, `test`, or `production` |
 
@@ -400,6 +399,7 @@ See [`.env.example`](.env.example) for the full list with defaults.
 
 | Variable | Description |
 |----------|-------------|
+| `STRIPE_SECRET_KEY` | Stripe test secret key (`sk_test_...`). Placeholder from `.env.example` works — payments degrade gracefully via circuit breaker. |
 | `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key for kiosk card entry (`pk_test_...`). Kiosk skips card entry if not set. |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
 | `BETTERSTACK_SOURCE_TOKEN` | Logtail source token (falls back to stdout if missing) |
@@ -409,7 +409,7 @@ See [`.env.example`](.env.example) for the full list with defaults.
 
 ---
 
-## BetterStack Setup
+## 📊 BetterStack Setup
 
 Structured logging is built in. To see logs in BetterStack:
 
@@ -422,7 +422,7 @@ All log entries include timestamp, level, correlation ID, and request context as
 
 ---
 
-## Deploying to Heroku
+## ☁️ Deploying to Heroku
 
 ```bash
 heroku create your-app-name
