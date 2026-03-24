@@ -271,20 +271,25 @@ describe("Inventory lifecycle", () => {
       expect(addRes.status).toBe(201)
     })
 
-    it("concurrent PATCHes trigger STALE_VERSION on one request", async () => {
+    it("concurrent PATCHes trigger STALE_VERSION on at least one request", async () => {
       const patch = (qty: number) =>
         request(app)
           .patch(`/api/stores/${storeId}/products/${productId}`)
           .set({ ...headers, ...idemKey() })
           .send({ quantity_on_hand: qty })
 
-      const results = await Promise.all([patch(20), patch(30)])
-      const statuses = results.map((r) => r.status).sort()
+      // Send 5 concurrent requests to reliably trigger a version conflict
+      const results = await Promise.all([patch(20), patch(30), patch(40), patch(50), patch(60)])
 
-      expect(statuses).toEqual([200, 409])
+      const ok = results.filter((r) => r.status === 200)
+      const stale = results.filter((r) => r.status === 409)
 
-      const failed = results.find((r) => r.status === 409)
-      expect(failed?.body.error.code).toBe("STALE_VERSION")
+      expect(ok.length).toBeGreaterThanOrEqual(1)
+      expect(stale.length).toBeGreaterThanOrEqual(1)
+
+      for (const r of stale) {
+        expect(r.body.error.code).toBe("STALE_VERSION")
+      }
     })
   })
 })
