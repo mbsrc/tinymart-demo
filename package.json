@@ -24,7 +24,10 @@
     "db:migrate": "tsx node_modules/.bin/sequelize-cli db:migrate",
     "db:migrate:undo": "tsx node_modules/.bin/sequelize-cli db:migrate:undo",
     "db:seed": "tsx node_modules/.bin/sequelize-cli db:seed:all",
-    "load-test": "k6 run load-tests/smoke.js"
+    "load-test": "k6 run load-tests/smoke.js",
+    "test:pw": "bunx playwright test --config e2e/playwright.config.ts",
+    "test:pw:ui": "bunx playwright test --config e2e/playwright.config.ts --ui",
+    "test:pw:headed": "bunx playwright test --config e2e/playwright.config.ts --headed"
   },
   "dependencies": {
     "@logtail/node": "^0.5.2",
@@ -47,6 +50,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-query-devtools": "^5.95.2",
     "@testing-library/jest-dom": "^6.9.1",
