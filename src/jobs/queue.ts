@@ -18,7 +18,7 @@ export async function startJobQueue(): Promise<PgBoss> {
 
   boss.on("error", (error) => {
     logger.error("pg-boss error", {
-      error: error instanceof Error ? error.message : String(error),
+      error: error instanceof Error ? error.message : JSON.stringify(error),
     })
   })
 
