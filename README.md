@@ -227,6 +227,34 @@ docs/
   tinymart-prd.md          Product requirements document
 ```
 
+## Deploying to Heroku
+
+```bash
+# Create app and add Postgres
+heroku create your-app-name
+heroku addons:create heroku-postgresql:essential-0
+
+# Set required env vars
+heroku config:set NODE_ENV=production
+heroku config:set STRIPE_SECRET_KEY=sk_test_...
+heroku config:set STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Optional: BetterStack logging
+heroku config:set BETTERSTACK_SOURCE_TOKEN=your_token
+
+# Deploy (from develop branch)
+git push heroku develop:main
+
+# Seed demo data (first deploy only)
+heroku run "npx tsx node_modules/.bin/sequelize-cli db:seed:all"
+
+# Verify
+heroku open
+curl https://your-app-name.herokuapp.com/health/detailed | jq
+```
+
+Migrations run automatically on each deploy via the `release` phase in the Procfile. The `app.json` manifest defines all env vars and addons for Heroku's "Deploy to Heroku" button.
+
 ## Environment Variables
 
 See [`.env.example`](.env.example) for the full list.
