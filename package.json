@@ -7,15 +7,16 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "lint": "biome check .",
-    "lint:fix": "biome check --write .",
+    "lint": "biome check --write .",
+    "format": "biome check --write .",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:migrate": "tsx node_modules/.bin/sequelize-cli db:migrate",
     "db:migrate:undo": "tsx node_modules/.bin/sequelize-cli db:migrate:undo",
-    "db:seed": "tsx node_modules/.bin/sequelize-cli db:seed:all"
+    "db:seed": "tsx node_modules/.bin/sequelize-cli db:seed:all",
+    "load-test": "k6 run load-tests/smoke.js"
   },
   "dependencies": {
     "@logtail/node": "^0.5.2",
