@@ -117,7 +117,7 @@ router.patch(
     if (quantity_on_hand !== undefined) {
       const delta = quantity_on_hand - storeProduct.quantity_on_hand
       if (delta !== 0) {
-        const eventType = delta > 0 ? "restock" : "adjustment"
+        const eventType = delta > 0 ? "restock" : "deduct"
         await adjustInventory({
           storeProductId: storeProduct.id,
           eventType,

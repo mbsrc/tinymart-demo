@@ -12,6 +12,7 @@
     "format": "biome check --write .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "vitest run tests/e2e/",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:dev:create": "docker exec tinymart-db psql -U tinymart -d postgres -c 'CREATE DATABASE tinymart_dev OWNER tinymart' || true",
