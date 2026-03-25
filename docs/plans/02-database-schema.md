@@ -130,7 +130,7 @@ All primary keys use `DataTypes.UUID` with `UUIDV4` default.
 |--------|------|-------------|
 | id | UUID (PK) | default UUIDV4 |
 | store_id | UUID (FK → stores) | not null |
-| stripe_customer_id | STRING | nullable |
+| stripe_payment_method_id | STRING | nullable |
 | stripe_payment_intent_id | STRING | nullable |
 | idempotency_key | STRING | unique |
 | status | ENUM('open','closed','charged','failed') | not null, default 'open' |

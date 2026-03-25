@@ -53,12 +53,13 @@ When the Stripe circuit breaker is open, record the payment intent in DB for lat
 
 - New migration: `deferred_charges` table (`id`, `session_id`, `amount`, `currency`, `stripe_params`, `status`, `attempts`, `last_error`, `created_at`, `processed_at`)
 - New model: `DeferredCharge`
-- `chargeOrDefer(params)`:
+- `captureOrDefer(sessionId, paymentIntentId, amountCents)`:
   1. Check `stripeCircuitBreaker.getState()`
-  2. If closed/half_open → call `createPaymentIntent(params)` as normal
-  3. If open → insert into `deferred_charges` with status `pending`, return a response indicating deferred
+  2. If closed/half_open → call `capturePaymentIntent(paymentIntentId, { amount_to_capture })` as normal
+  3. If open → insert into `deferred_charges` with the PaymentIntent ID and amount for later capture, return a response indicating deferred
 - `processDeferredCharges()`:
-  - Job handler that retries pending deferred charges when Stripe recovers
+  - Job handler that retries pending deferred captures when Stripe recovers
+  - Calls `capturePaymentIntent()` with stored PaymentIntent ID and amount
   - Updates status to `succeeded` or increments `attempts`
   - Register as a pg-boss cron job (runs every 2 minutes)
 

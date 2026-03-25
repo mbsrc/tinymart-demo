@@ -20,7 +20,7 @@ Wire up the missing shopping session endpoints and harden the API so a browser-b
 3. Look up `price_cents` for each product, compute `total_cents`
 4. Inside a Sequelize transaction:
    - Deduct `quantity_on_hand` via `adjustInventory()` for each item
-   - Call `chargeOrDefer()` (handles Stripe outages)
+   - Call `captureOrDefer()` to capture the pre-authorized PaymentIntent (handles Stripe outages)
    - Create `Transaction` record
    - Update session status → `charged` (or `failed`)
 5. Return transaction summary

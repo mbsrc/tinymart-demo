@@ -97,7 +97,7 @@ async workflows.
 ### Transaction Tables
 
 **sessions**
-- id, store_id (FK), stripe_customer_id, stripe_payment_intent_id, status (open/closed/charged/failed), opened_at, closed_at, charged_at
+- id, store_id (FK), stripe_payment_method_id, stripe_payment_intent_id, status (open/closed/charged/failed), opened_at, closed_at, charged_at
 - idempotency_key (unique — prevents duplicate session creation)
 
 **session_items**
