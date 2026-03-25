@@ -102,7 +102,7 @@ export default {
       {
         id: sessionId,
         store_id: store1Id,
-        stripe_customer_id: "cus_demo_123",
+        stripe_payment_method_id: "cus_demo_123",
         stripe_payment_intent_id: "pi_demo_123",
         idempotency_key: uuid(),
         status: "charged",

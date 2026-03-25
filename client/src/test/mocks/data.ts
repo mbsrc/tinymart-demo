@@ -85,7 +85,7 @@ export const mockStore2: Store = {
 export const mockSession: Session = {
   id: "session-1",
   store_id: "store-1",
-  stripe_customer_id: null,
+  stripe_payment_method_id: null,
   stripe_payment_intent_id: null,
   idempotency_key: null,
   status: "open",
