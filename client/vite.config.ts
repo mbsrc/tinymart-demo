@@ -5,6 +5,7 @@ import { defineConfig } from "vite"
 const apiPort = process.env.VITE_API_PORT ?? "3001"
 
 export default defineConfig({
+  envDir: "..",
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {

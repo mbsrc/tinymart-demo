@@ -5,9 +5,9 @@
   "type": "module",
   "repository": "https://github.com/mbsrc/tinymart-demo",
   "scripts": {
-    "dev": "concurrently -n api,ui \"tsx watch src/server.ts\" \"cd client && bunx vite\"",
+    "dev": "concurrently -n api,ui \"tsx watch src/server.ts\" \"bunx vite client\"",
     "dev:api": "tsx watch src/server.ts",
-    "dev:ui": "cd client && bunx vite",
+    "dev:ui": "bunx vite client",
     "build": "tsc && cd client && bunx vite build",
     "typecheck": "tsc --noEmit && cd client && bunx tsc --noEmit",
     "start": "node dist/server.js",
