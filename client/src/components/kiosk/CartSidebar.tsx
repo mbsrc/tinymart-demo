@@ -79,10 +79,10 @@ export function CartSidebar({
         <button
           type="button"
           onClick={onClose}
-          disabled={closing || lines.length === 0}
+          disabled={closing}
           className="w-full rounded-xl bg-green-600 py-3 text-lg font-bold text-white transition-colors hover:bg-green-500 disabled:opacity-50"
         >
-          {closing ? "Processing..." : "Close Door & Pay"}
+          {closing ? "Processing..." : lines.length === 0 ? "Close Door" : "Close Door & Pay"}
         </button>
       </div>
     </div>
