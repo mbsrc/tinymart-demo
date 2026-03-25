@@ -12,7 +12,9 @@ interface Logger {
 }
 
 function createLogger(): Logger {
-  const logtail = config.betterStackSourceToken ? new Logtail(config.betterStackSourceToken) : null
+  const logtail = config.betterStackSourceToken
+    ? new Logtail(config.betterStackSourceToken, { endpoint: config.betterStackIngestingHost })
+    : null
 
   function log(level: "info" | "warn" | "error", message: string, context?: LogContext): void {
     const entry = {
