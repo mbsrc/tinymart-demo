@@ -104,7 +104,7 @@ describe("Models", () => {
   it("creates a Session", async () => {
     const session = await Session.create({
       store_id: storeId,
-      stripe_customer_id: null,
+      stripe_payment_method_id: null,
       stripe_payment_intent_id: null,
       idempotency_key: null,
     })

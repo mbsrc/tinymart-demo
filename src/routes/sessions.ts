@@ -1,4 +1,5 @@
 import { Router } from "express"
+import { safeEnqueue } from "../jobs/safeEnqueue.js"
 import {
   Product,
   Session,
@@ -8,12 +9,15 @@ import {
   Transaction,
   sequelize,
 } from "../models/index.js"
-import { chargeOrDefer } from "../services/deferredCharge.js"
+import { captureOrDefer } from "../services/deferredCharge.js"
 import { adjustInventory } from "../services/inventory.js"
+import { cancelPaymentIntent, createPaymentIntent } from "../services/stripe.js"
 import { AppError } from "../types/index.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { buildMeta, envelope } from "../utils/envelope.js"
 import { reconcileCart } from "../utils/reconcileCart.js"
+
+const PRE_AUTH_AMOUNT_CENTS = 5000 // $50 ceiling for pre-authorization
 
 const router = Router()
 
@@ -53,9 +57,32 @@ router.post(
       throw new AppError(422, "STORE_NOT_ONLINE", "Store is not currently accepting sessions")
     }
 
+    let stripePaymentIntentId: string | null = null
+
+    // Pre-authorize the card if a payment method is provided
+    if (stripe_payment_method_id) {
+      if (process.env.E2E_MOCK_STRIPE === "true") {
+        stripePaymentIntentId = `pi_e2e_mock_${Date.now()}`
+      } else {
+        const paymentIntent = await createPaymentIntent({
+          amount: PRE_AUTH_AMOUNT_CENTS,
+          currency: "usd",
+          capture_method: "manual",
+          payment_method: stripe_payment_method_id,
+          confirm: true,
+          automatic_payment_methods: {
+            enabled: true,
+            allow_redirects: "never",
+          },
+        })
+        stripePaymentIntentId = paymentIntent.id
+      }
+    }
+
     const session = await Session.create({
       store_id,
-      stripe_customer_id: stripe_payment_method_id ?? null,
+      stripe_payment_method_id: stripe_payment_method_id ?? null,
+      stripe_payment_intent_id: stripePaymentIntentId,
     })
 
     res.status(201).json(envelope(session, buildMeta(req)))
@@ -142,8 +169,14 @@ router.post(
     const items = session.SessionItems ?? []
     const cart = reconcileCart(items)
 
-    // Empty cart — close without charging
+    // Empty cart — release the hold and close without charging
     if (cart.length === 0) {
+      if (session.stripe_payment_intent_id) {
+        if (process.env.E2E_MOCK_STRIPE !== "true") {
+          await cancelPaymentIntent(session.stripe_payment_intent_id)
+        }
+      }
+
       session.status = "closed"
       session.closed_at = new Date()
       await session.save()
@@ -200,16 +233,17 @@ router.post(
         })
       }
 
-      // Charge or defer
-      const chargeResult = await chargeOrDefer(session.id, {
-        amount: totalCents,
-        currency: "usd",
-        metadata: { session_id: session.id },
-      })
+      // Capture the pre-authorized PaymentIntent for the actual cart total
+      let captureSucceeded = true
 
-      const sessionStatus = chargeResult.outcome === "charged" ? "charged" : "failed"
-      const chargedAt = chargeResult.outcome === "charged" ? new Date() : null
-      const stripeChargeId = chargeResult.paymentIntent?.id ?? null
+      if (session.stripe_payment_intent_id) {
+        const result = await captureOrDefer(
+          session.id,
+          session.stripe_payment_intent_id,
+          totalCents,
+        )
+        captureSucceeded = result.outcome === "captured"
+      }
 
       // Create transaction record
       await Transaction.create(
@@ -217,8 +251,8 @@ router.post(
           session_id: session.id,
           store_id: session.store_id,
           total_cents: totalCents,
-          stripe_charge_id: stripeChargeId,
-          status: chargeResult.outcome === "charged" ? "succeeded" : "pending",
+          stripe_charge_id: session.stripe_payment_intent_id,
+          status: captureSucceeded ? "succeeded" : "pending",
         },
         { transaction: t },
       )
@@ -226,10 +260,9 @@ router.post(
       // Update session
       await session.update(
         {
-          status: sessionStatus,
+          status: captureSucceeded ? "charged" : "failed",
           closed_at: new Date(),
-          charged_at: chargedAt,
-          stripe_payment_intent_id: stripeChargeId,
+          charged_at: captureSucceeded ? new Date() : null,
         },
         { transaction: t },
       )
@@ -239,6 +272,14 @@ router.post(
     const updatedSession = await Session.findByPk(session.id, {
       include: [{ model: Transaction }],
     })
+
+    // Enqueue receipt notification (best-effort — doesn't block the response)
+    if (updatedSession?.Transaction) {
+      safeEnqueue("send-receipt", {
+        sessionId: session.id,
+        transactionId: updatedSession.Transaction.id,
+      }).catch(() => {})
+    }
 
     res.json(envelope(updatedSession, buildMeta(req)))
   }),

@@ -6,10 +6,16 @@ import { Operator, Product, Session, Store, StoreProduct, sequelize } from "../s
 import { adjustInventory } from "../src/services/inventory.js"
 
 vi.mock("../src/services/deferredCharge.js", () => ({
-  chargeOrDefer: vi.fn().mockResolvedValue({
-    outcome: "charged",
-    paymentIntent: { id: "pi_test_123" },
+  captureOrDefer: vi.fn().mockResolvedValue({
+    outcome: "captured",
   }),
+}))
+
+vi.mock("../src/services/stripe.js", () => ({
+  createPaymentIntent: vi.fn().mockResolvedValue({ id: "pi_test_123" }),
+  cancelPaymentIntent: vi.fn().mockResolvedValue({}),
+  capturePaymentIntent: vi.fn().mockResolvedValue({}),
+  stripeCircuitBreaker: { getState: () => "closed", getStatus: () => ({}) },
 }))
 
 function idemKey(): Record<string, string> {

@@ -72,7 +72,7 @@ beforeAll(async () => {
   // Session: 2 water added, 1 water removed, 1 cola added → net: water=1, cola=1
   const session = await Session.create({
     store_id: storeId,
-    stripe_customer_id: "cus_deduct",
+    stripe_payment_method_id: "cus_deduct",
     stripe_payment_intent_id: "pi_deduct",
   })
   sessionId = session.id

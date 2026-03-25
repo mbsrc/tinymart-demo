@@ -52,7 +52,7 @@ beforeAll(async () => {
 
   const session = await Session.create({
     store_id: store.id,
-    stripe_customer_id: "cus_test",
+    stripe_payment_method_id: "cus_test",
     stripe_payment_intent_id: "pi_test",
   })
   sessionId = session.id

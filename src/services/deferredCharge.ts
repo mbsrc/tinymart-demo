@@ -1,55 +1,58 @@
-import type Stripe from "stripe"
 import { DeferredCharge } from "../models/DeferredCharge.js"
 import { logger } from "../utils/logger.js"
-import { createPaymentIntent, stripeCircuitBreaker } from "./stripe.js"
+import { capturePaymentIntent, stripeCircuitBreaker } from "./stripe.js"
 
 const MAX_DEFERRED_ATTEMPTS = 5
 
-export interface ChargeResult {
-  outcome: "charged" | "deferred"
-  paymentIntent?: Stripe.PaymentIntent
+export interface CaptureResult {
+  outcome: "captured" | "deferred"
   deferredChargeId?: string
 }
 
-export async function chargeOrDefer(
+export async function captureOrDefer(
   sessionId: string,
-  params: Stripe.PaymentIntentCreateParams,
-): Promise<ChargeResult> {
+  paymentIntentId: string,
+  amountCents: number,
+): Promise<CaptureResult> {
   if (process.env.E2E_MOCK_STRIPE === "true") {
-    return {
-      outcome: "charged" as const,
-      paymentIntent: { id: `pi_e2e_mock_${Date.now()}` } as Stripe.PaymentIntent,
-    }
+    return { outcome: "captured" }
   }
 
   const circuitState = stripeCircuitBreaker.getState()
 
   if (circuitState === "closed" || circuitState === "half_open") {
     try {
-      const paymentIntent = await createPaymentIntent(params)
-      return { outcome: "charged", paymentIntent }
+      await capturePaymentIntent(paymentIntentId, {
+        amount_to_capture: amountCents,
+      })
+      return { outcome: "captured" }
     } catch (error) {
       // If the call failed and the circuit just opened, fall through to defer
       if (stripeCircuitBreaker.getState() !== "open") {
         throw error
       }
-      logger.warn("Stripe call failed and circuit opened, deferring charge", {
+      logger.warn("Stripe capture failed and circuit opened, deferring capture", {
         session_id: sessionId,
+        payment_intent_id: paymentIntentId,
       })
     }
   }
 
   const deferred = await DeferredCharge.create({
     session_id: sessionId,
-    amount: params.amount as number,
-    currency: (params.currency as string) ?? "usd",
-    stripe_params: params as unknown as Record<string, unknown>,
+    amount: amountCents,
+    currency: "usd",
+    stripe_params: {
+      payment_intent_id: paymentIntentId,
+      amount_to_capture: amountCents,
+    },
   })
 
-  logger.info("Charge deferred due to Stripe unavailability", {
+  logger.info("Capture deferred due to Stripe unavailability", {
     session_id: sessionId,
     deferred_charge_id: deferred.id,
-    amount: params.amount,
+    payment_intent_id: paymentIntentId,
+    amount: amountCents,
   })
 
   return { outcome: "deferred", deferredChargeId: deferred.id }
@@ -81,7 +84,13 @@ export async function processDeferredCharges(): Promise<{
 
   for (const charge of pending) {
     try {
-      await createPaymentIntent(charge.stripe_params as unknown as Stripe.PaymentIntentCreateParams)
+      const params = charge.stripe_params as {
+        payment_intent_id: string
+        amount_to_capture: number
+      }
+      await capturePaymentIntent(params.payment_intent_id, {
+        amount_to_capture: params.amount_to_capture,
+      })
 
       charge.status = "succeeded"
       charge.processed_at = new Date()
@@ -94,7 +103,7 @@ export async function processDeferredCharges(): Promise<{
 
       if (charge.attempts >= MAX_DEFERRED_ATTEMPTS) {
         charge.status = "failed"
-        logger.error("Deferred charge permanently failed", {
+        logger.error("Deferred capture permanently failed", {
           deferred_charge_id: charge.id,
           session_id: charge.session_id,
           attempts: charge.attempts,

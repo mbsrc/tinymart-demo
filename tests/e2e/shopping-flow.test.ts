@@ -2,10 +2,16 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import { app, createOperator, idemKey, request, sequelize } from "./helpers.js"
 
 vi.mock("../../src/services/deferredCharge.js", () => ({
-  chargeOrDefer: vi.fn().mockResolvedValue({
-    outcome: "charged",
-    paymentIntent: { id: "pi_test_e2e_123" },
+  captureOrDefer: vi.fn().mockResolvedValue({
+    outcome: "captured",
   }),
+}))
+
+vi.mock("../../src/services/stripe.js", () => ({
+  createPaymentIntent: vi.fn().mockResolvedValue({ id: "pi_test_e2e_123" }),
+  cancelPaymentIntent: vi.fn().mockResolvedValue({}),
+  capturePaymentIntent: vi.fn().mockResolvedValue({}),
+  stripeCircuitBreaker: { getState: () => "closed", getStatus: () => ({}) },
 }))
 
 let headers: Record<string, string>
