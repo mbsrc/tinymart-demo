@@ -115,7 +115,7 @@ describe("Health endpoints", () => {
 
     expect(res.body.data.uptime).toBeGreaterThan(0)
     expect(res.body.data.memory).toBeDefined()
-    expect(res.body.data.memory.heapUsed).toBeGreaterThan(0)
+    expect(res.body.data.memory.heap_used).toBeGreaterThan(0)
   })
 
   it("returns 404 envelope for unknown routes", async () => {

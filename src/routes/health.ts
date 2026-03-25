@@ -92,7 +92,10 @@ router.get("/health/detailed", async (req: Request, res: Response) => {
         },
         job_queue: jobQueue,
         uptime: process.uptime(),
-        memory: process.memoryUsage(),
+        memory: (() => {
+          const mem = process.memoryUsage()
+          return { rss: mem.rss, heap_used: mem.heapUsed, heap_total: mem.heapTotal }
+        })(),
       },
       { correlation_id: req.correlationId, timestamp: new Date().toISOString() },
     ),

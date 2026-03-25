@@ -54,7 +54,7 @@ describe("Health and diagnostics", () => {
       expect(res.body.data).toHaveProperty("dependencies")
       expect(res.body.data.uptime).toBeGreaterThan(0)
       expect(res.body.data.memory.rss).toBeGreaterThan(0)
-      expect(res.body.data.memory.heapUsed).toBeGreaterThan(0)
+      expect(res.body.data.memory.heap_used).toBeGreaterThan(0)
     })
   })
 
