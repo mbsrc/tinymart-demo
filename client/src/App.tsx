@@ -23,20 +23,43 @@ const queryClient = new QueryClient({
 function ProtectedRoutes() {
   const { apiKey } = useAuth()
 
-  return (
-    <>
-      {!apiKey && <ApiKeyPrompt />}
+  if (!apiKey) {
+    return (
       <Layout>
-        <ErrorBoundary>
-          <Routes>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/stores/:id" element={<StoreDetailPage />} />
-            <Route path="/transactions" element={<TransactionsPage />} />
-            <Route path="/health" element={<HealthPage />} />
-          </Routes>
-        </ErrorBoundary>
+        <ApiKeyPrompt />
       </Layout>
-    </>
+    )
+  }
+
+  return (
+    <Layout>
+      <ErrorBoundary key={apiKey}>
+        <Routes>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/stores/:id" element={<StoreDetailPage />} />
+          <Route path="/transactions" element={<TransactionsPage />} />
+          <Route path="/health" element={<HealthPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </ErrorBoundary>
+    </Layout>
+  )
+}
+
+function NotFoundPage() {
+  return (
+    <div className="flex min-h-[400px] items-center justify-center">
+      <div className="text-center">
+        <p className="text-4xl font-bold text-gray-300">404</p>
+        <p className="mt-2 text-lg font-semibold text-gray-700">Page not found</p>
+        <a
+          href="/"
+          className="mt-4 inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          Back to Dashboard
+        </a>
+      </div>
+    </div>
   )
 }
 
