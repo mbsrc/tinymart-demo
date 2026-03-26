@@ -16,7 +16,7 @@ Active backlog of bugs, improvements, and tech debt. Read at the start of every 
   outer transaction rolls back but inventory is already permanently deducted. Fix: pass the
   outer transaction `t` into `adjustInventory()`.
 
-- **No Stripe idempotency keys on payment calls** — `src/services/stripe.ts:28,35`
+- **No Stripe idempotency keys on payment calls** — `src/services/stripe.ts:25,31`
   `createPaymentIntent` and `capturePaymentIntent` retry up to 3 times without passing
   idempotency keys to Stripe. Network timeout + retry = duplicate charges. Fix: generate
   UUID-based idempotency key per call, use session/charge ID for captures.
@@ -35,7 +35,7 @@ Active backlog of bugs, improvements, and tech debt. Read at the start of every 
 - **API keys stored in plaintext** — `src/models/Operator.ts:9`
   Database compromise exposes all keys. Fix: hash with SHA-256, display raw key only once.
 
-- **/health/detailed exposes internals without auth** — `src/routes/health.ts:60-100`
+- **/health/detailed exposes internals without auth** — `src/routes/health.ts:60-103`
   Leaks memory usage, uptime, circuit breaker states, queue internals. Gate behind auth
   or restrict to internal network.
 
@@ -44,9 +44,6 @@ Active backlog of bugs, improvements, and tech debt. Read at the start of every 
   code filters by `reference_id: sessionId` which may be sufficient. Needs review to
   confirm partial-deduction (crash after 2 of 3 products) is actually handled.
 
-- **sendReceipt handler silently swallows failures** — `src/jobs/handlers/sendReceipt.ts:47-51`
-  No try/catch, no `recordJobFailure`. After pg-boss retries exhaust, failure is invisible.
-
 - **Separate connection pool for pg-boss** — `src/jobs/queue.ts:9-11`
   pg-boss creates its own pool (10 connections) + app pool (5) = 15+. Heroku basic allows
   20. Two dynos would hit the limit. Fix: pass `pool: { max: 3 }` to pg-boss config.
@@ -54,12 +51,22 @@ Active backlog of bugs, improvements, and tech debt. Read at the start of every 
 - **Products and stores list endpoints have no pagination** — `src/routes/products.ts:70`, `src/routes/stores.ts:33`
   `findAll` returns all records without LIMIT. Fix: add `limit`/`offset` params (default 50, max 100).
 
-- **Missing input validation on numeric fields** — `src/routes/stores.ts:66,80-81`
+- **Missing input validation on numeric fields** — `src/routes/stores.ts:66,113`
   `quantity_on_hand` and `low_stock_threshold` pass through without type/range checks.
   Negative numbers bypass stock checks.
 
-- **dependencyRegistry interval not unref'd** — `src/services/dependencyRegistry.ts:93`
-  Keeps event loop alive during shutdown. Fix: add `.unref()` like the rate limiter does.
+- **Seeder is not idempotent** — `src/seeders/20260323000001-demo-data.ts`
+  Running `bun run db:seed` twice on the same database crashes on unique constraint
+  (operator email). Add an "already seeded" guard or use upsert logic.
+
+- **E2E test constants duplicated from seeder** — `e2e/helpers/constants.ts`
+  API key, store names, and product names are hardcoded in both the seeder and E2E
+  constants. If seeder data changes, E2E tests silently break. Extract shared constants
+  to a single source (e.g. `src/constants/demo-data.ts`).
+
+- **No shared test data factory** — `tests/helpers.ts`
+  Only `createOperator` exists. Each test file creates stores, products, sessions inline.
+  Add `createStore`, `createProduct`, `createSession` helpers to reduce boilerplate.
 
 ## Nice to Have
 

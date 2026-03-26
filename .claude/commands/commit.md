@@ -1,6 +1,7 @@
 ---
 description: Create conventional commits with emoji. Use when committing code changes.
-model: sonnet
+model: haiku
+effort: medium
 ---
 
 Create well-formatted git commits using conventional commit format with emoji prefixes.

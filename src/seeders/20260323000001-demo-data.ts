@@ -31,6 +31,12 @@ const now = new Date()
 
 export default {
   async up(queryInterface: QueryInterface) {
+    // Idempotency: skip if the demo operator already exists
+    const [existing] = await queryInterface.sequelize.query(
+      "SELECT id FROM operators WHERE email = 'demo@tinymart.dev' LIMIT 1",
+    )
+    if ((existing as unknown[]).length > 0) return
+
     await queryInterface.bulkInsert("operators", [
       {
         id: operatorId,

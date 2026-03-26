@@ -266,7 +266,7 @@ Full system diagnostics including:
 - Job queue info (registered queues, dead letter count)
 - System metrics (uptime, memory: RSS/heap_used/heap_total)
 
-**Note:** This endpoint is unauthenticated and exposes internal details. See `known-issues.md` for the security warning.
+**Note:** This endpoint is unauthenticated and exposes internal details. See `docs/todo.md` (Should Fix section) for the security warning.
 
 ---
 
@@ -342,4 +342,4 @@ All queries are scoped to the authenticated operator's data. An operator can nev
 
 ### Rate limiting
 
-All API routes (after health) pass through the rate limiter. Default: 100 requests per 15-minute window per IP.
+All API routes (after health) pass through the rate limiter. Default: 100 requests per 60-second window per IP (configurable via `RATE_LIMIT_WINDOW_MS`).
