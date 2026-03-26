@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
-import { resetRateLimiter } from "../../src/middleware/rateLimiter.js"
-import { dependencyRegistry } from "../../src/services/dependencyRegistry.js"
+import { resetRateLimiter } from "../src/middleware/rateLimiter.js"
+import { dependencyRegistry } from "../src/services/dependencyRegistry.js"
 import { app, createOperator, idemKey, request, sequelize } from "./helpers.js"
 
 let headers: Record<string, string>

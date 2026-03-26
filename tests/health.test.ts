@@ -1,11 +1,24 @@
+import { randomUUID } from "node:crypto"
 import request from "supertest"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { app } from "../src/app.js"
-import { sequelize } from "../src/models/index.js"
+import { Operator, sequelize } from "../src/models/index.js"
 import { dependencyRegistry } from "../src/services/dependencyRegistry.js"
+
+let apiHeaders: Record<string, string>
 
 beforeAll(async () => {
   await sequelize.sync({ force: true })
+
+  const op = await Operator.create({
+    name: "Health Op",
+    email: "health@example.com",
+    api_key: `key-${randomUUID()}`,
+  })
+  apiHeaders = {
+    "x-api-key": op.api_key,
+    "Content-Type": "application/json",
+  }
 
   // Register test dependencies so health endpoints have something to check
   dependencyRegistry.register("database", async () => {
@@ -124,5 +137,22 @@ describe("Health endpoints", () => {
     expect(res.status).toBe(404)
     expect(res.body.success).toBe(false)
     expect(res.body.error.code).toBe("NOT_FOUND")
+  })
+
+  it("echoes correlation ID on API routes", async () => {
+    const res = await request(app)
+      .get("/api/stores")
+      .set({ ...apiHeaders, "X-Correlation-ID": "test-api-corr" })
+
+    expect(res.headers["x-correlation-id"]).toBe("test-api-corr")
+    expect(res.body.meta.correlation_id).toBe("test-api-corr")
+  })
+
+  it("auto-generates UUID correlation ID when no header sent", async () => {
+    const res = await request(app).get("/api/stores").set(apiHeaders)
+
+    const id = res.body.meta.correlation_id
+    expect(id).toBeDefined()
+    expect(id).toMatch(/^[0-9a-f-]{36}$/)
   })
 })

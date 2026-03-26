@@ -342,3 +342,91 @@ describe("GET /api/sessions/:id/transaction — get transaction", () => {
     expect(res.body.error.code).toBe("SESSION_NOT_FOUND")
   })
 })
+
+describe("Multi-product shopping flow", () => {
+  it("calculates correct total across multiple products with add/remove", async () => {
+    const productB = await Product.create({
+      operator_id: operator.id,
+      name: "Test Chips",
+      sku: `SKU-${randomUUID()}`,
+      price_cents: 350,
+      category: "pantry",
+    })
+
+    const spB = await StoreProduct.create({
+      store_id: store.id,
+      product_id: productB.id,
+    })
+
+    await adjustInventory({
+      storeProductId: spB.id,
+      eventType: "restock",
+      quantity: 10,
+    })
+
+    const openRes = await request(app)
+      .post("/api/sessions")
+      .set(idemKey())
+      .send({ store_id: store.id })
+
+    expect(openRes.status).toBe(201)
+    const sessionId = openRes.body.data.id
+
+    // Add 2 Sodas (250 each)
+    for (let i = 0; i < 2; i++) {
+      await request(app)
+        .post(`/api/sessions/${sessionId}/items`)
+        .set(idemKey())
+        .send({ product_id: product.id, action: "added" })
+    }
+
+    // Add 1 Chips (350)
+    await request(app)
+      .post(`/api/sessions/${sessionId}/items`)
+      .set(idemKey())
+      .send({ product_id: productB.id, action: "added" })
+
+    // Remove 1 Soda
+    await request(app)
+      .post(`/api/sessions/${sessionId}/items`)
+      .set(idemKey())
+      .send({ product_id: product.id, action: "removed" })
+
+    // Close — net: 1 Soda (250) + 1 Chips (350) = 600
+    const closeRes = await request(app)
+      .post(`/api/sessions/${sessionId}/close`)
+      .set(idemKey())
+      .send()
+
+    expect(closeRes.status).toBe(200)
+    expect(closeRes.body.data.status).toBe("charged")
+    expect(closeRes.body.data.Transaction.total_cents).toBe(600)
+
+    // Verify inventory: Soda 10→9, Chips 10→9
+    const spA = await StoreProduct.findByPk(storeProduct.id)
+    expect(spA?.quantity_on_hand).toBe(9)
+
+    const spBUpdated = await StoreProduct.findByPk(spB.id)
+    expect(spBUpdated?.quantity_on_hand).toBe(9)
+  })
+
+  it("creates inventory events accessible via API after close", async () => {
+    const session = await Session.create({ store_id: store.id })
+
+    await request(app)
+      .post(`/api/sessions/${session.id}/items`)
+      .set(idemKey())
+      .send({ product_id: product.id, action: "added" })
+
+    await request(app).post(`/api/sessions/${session.id}/close`).set(idemKey()).send()
+
+    const eventsRes = await request(app)
+      .get(`/api/stores/${store.id}/products/${product.id}/events`)
+      .set(operatorHeaders)
+
+    expect(eventsRes.status).toBe(200)
+    const events = eventsRes.body.data.events
+    expect(events.some((e: { event_type: string }) => e.event_type === "restock")).toBe(true)
+    expect(events.some((e: { event_type: string }) => e.event_type === "deduct")).toBe(true)
+  })
+})
