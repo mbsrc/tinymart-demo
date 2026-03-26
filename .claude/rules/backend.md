@@ -11,7 +11,7 @@ paths:
 - All responses use envelope: `{ success, data, error, meta }`
 - Helpers: `envelope()` / `errorEnvelope()` from `src/utils/envelope.ts`
 - Errors: throw `AppError` from `src/types/index.ts` — never raw `Error`
-- Async handlers: wrap with `asyncHandler` from `src/utils/asyncHandler.ts` (Express 4 does not catch async errors)
+- Async handlers: Express 5 catches async errors natively — no wrapper needed
 
 ## Middleware Order (`src/app.ts`)
 1. `helmet` → 2. `trust proxy` → 3. `cors` → 4. body parsers
