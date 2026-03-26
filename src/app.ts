@@ -25,6 +25,11 @@ app.use(helmet())
 // 2. Trust proxy — must precede rate limiter
 app.set("trust proxy", 1)
 
+// Express v5 changed the default query parser to "extended" (qs), which returns
+// nested objects. "simple" uses Node's built-in querystring module and returns a
+// plain object, preserving the v4 behavior all routes rely on.
+app.set("query parser", "simple")
+
 // 3. CORS
 app.use(
   cors({
