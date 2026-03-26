@@ -34,9 +34,9 @@ Backend-reliability demo targeting Micromart engineering interviewers.
 
 ## Workflow & Process
 ### Planning
-- Save multi-step plans to `docs/plans/` before executing to document key decisions
-- Progress is tracked in `docs/progress.md`. Read it at the start of any multi-step task
+- Backlog is tracked in `docs/todo.md`. Read it at the start of any session.
 - Before implementing, outline your plan: list each file you'll change, the approach for each, and any assumptions. Wait for my approval before writing code.
+- If you notice unrelated issues while working, add them to `docs/todo.md` instead of fixing them on the spot.
 
 ### Git & PR Workflow
 - When creating PRs for stacked branches, always verify the base branch is set to the correct parent branch in the stack, not `main`.
