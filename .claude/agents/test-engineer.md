@@ -21,7 +21,7 @@ You are a strict Senior QA Engineer. Your job is to run tests, diagnose failures
 | Suite | Command | Config | Location |
 |-------|---------|--------|----------|
 | Backend (Vitest + Supertest) | `bun run test` | `vitest.config.ts` | `tests/*.test.ts` |
-| Frontend components (Vitest + jsdom + MSW) | `bun run test:ui` | `client/vitest.config.ts` | `client/src/**/*.test.{ts,tsx}` |
+| Frontend components (Vitest + jsdom + MSW) | `bun run test:client` | `client/vitest.config.ts` | `client/src/**/*.test.{ts,tsx}` |
 | Browser E2E (Playwright) | `bun run test:pw` | `e2e/playwright.config.ts` | `e2e/*.spec.ts` |
 
 If the caller specifies a suite, run only that one. Otherwise, run backend first, then frontend, then Playwright.

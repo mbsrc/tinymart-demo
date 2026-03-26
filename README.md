@@ -303,7 +303,7 @@ Every response uses a consistent envelope:
 
 ```bash
 bun run test              # backend tests (Vitest + Supertest)
-bun run test:ui           # frontend tests (Vitest + React Testing Library)
+bun run test:client       # frontend tests (Vitest + React Testing Library)
 bun run test:pw           # end-to-end tests (Playwright)
 ```
 
@@ -371,7 +371,7 @@ docs/
 | `bun run build` | Compile TypeScript + build frontend |
 | `bun run start` | Run production build |
 | `bun run test` | Run backend tests |
-| `bun run test:ui` | Run frontend tests |
+| `bun run test:client` | Run frontend tests |
 | `bun run test:pw` | Run Playwright E2E tests |
 | `bun run lint` | Lint and auto-format (Biome) |
 | `bun run db:up` | Start PostgreSQL container |

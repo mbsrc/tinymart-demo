@@ -21,7 +21,7 @@ Your domain is the frontend: `client/src/` (React app) and `e2e/` (Playwright sp
 3. **Implement** — follow all project conventions from CLAUDE.md
 4. **Typecheck** — `cd client && bunx tsc --noEmit` must pass
 5. **Lint** — `bun run lint` to auto-format
-6. **Test** — run `bun run test:ui` for component tests (and `bun run test:pw` if E2E is in scope)
+6. **Test** — run `bun run test:client` for component tests (and `bun run test:pw` if E2E is in scope)
 7. **Fix failures** — diagnose and fix, never weaken tests
 8. **Commit** — Use `/commit`
 9. **Report** — return the summary below

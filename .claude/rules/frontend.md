@@ -10,7 +10,7 @@ paths:
 `client/src/pages/`, `client/src/components/`, `client/src/hooks/`, `client/src/api/`
 
 ## Component Testing (Vitest + jsdom + MSW)
-- Run: `bun run test:ui` (full) or `cd client && bunx vitest run src/<path>.test.tsx` (single)
+- Run: `bun run test:client` (full) or `cd client && bunx vitest run src/<path>.test.tsx` (single)
 - Use `renderWithProviders` from `client/src/test/render.tsx` — never bare `render`
 - Use `data-testid` selectors; prefer `findBy*` (async) over `getBy*` for API-loaded content
 - MSW handlers in `client/src/test/mocks/handlers.ts`, data in `mocks/data.ts`

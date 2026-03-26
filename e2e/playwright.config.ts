@@ -11,7 +11,7 @@ const UI_PORT = "5174"
 
 const apiEnv = {
   PORT: API_PORT,
-  DATABASE_URL: "postgresql://tinymart:tinymart@localhost:5433/tinymart_e2e",
+  DATABASE_URL: "postgresql://tinymart:tinymart@localhost:5432/tinymart_e2e",
   STRIPE_SECRET_KEY: "sk_test_fake_e2e_key",
   E2E_MOCK_STRIPE: "true",
   NODE_ENV: "test",
