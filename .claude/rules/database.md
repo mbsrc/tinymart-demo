@@ -1,3 +1,11 @@
+---
+paths:
+  - "src/models/**/*.ts"
+  - "src/migrations/**/*.ts"
+  - "src/config/database.ts"
+  - "src/config/sequelize.cjs"
+---
+
 # Database Rules
 
 ## Sequelize Models
@@ -15,3 +23,8 @@
 ## Queries
 - Use Sequelize model methods and scopes over raw SQL
 - Raw SQL is acceptable only for complex joins or performance-critical paths — add a comment explaining why
+
+## Sequelize CLI
+- Project is ESM (`"type": "module"`) but sequelize-cli requires CJS
+- Run migrations with: `tsx node_modules/.bin/sequelize-cli`
+- Keep `.sequelizerc` + `src/config/sequelize.cjs` as CJS files
