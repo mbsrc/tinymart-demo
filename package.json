@@ -18,6 +18,7 @@
     "test:ui": "cd client && bunx vitest run",
     "test:ui:watch": "cd client && bunx vitest",
     "test:e2e": "vitest run tests/e2e/",
+    "test:all": "vitest run && cd client && bunx vitest run && cd .. && bunx playwright test --config e2e/playwright.config.ts",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:dev:create": "docker exec tinymart-db psql -U tinymart -d postgres -c 'CREATE DATABASE tinymart_dev OWNER tinymart' || true",

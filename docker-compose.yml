@@ -7,12 +7,12 @@ services:
       POSTGRES_PASSWORD: tinymart
       POSTGRES_DB: tinymart_dev
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/init-test-db.sh:/docker-entrypoint-initdb.d/init-test-db.sh
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tinymart -d tinymart_dev"]
+      test: [ "CMD-SHELL", "pg_isready -U tinymart -d tinymart_dev" ]
       interval: 5s
       timeout: 3s
       retries: 5
