@@ -55,7 +55,7 @@ export default defineConfig({
       port: Number(UI_PORT),
       reuseExistingServer: false,
       timeout: 15_000,
-      env: { VITE_API_PORT: API_PORT },
+      env: { VITE_API_PORT: API_PORT, VITE_STRIPE_PUBLISHABLE_KEY: "" },
       cwd: path.join(rootDir, "client"),
     },
   ],

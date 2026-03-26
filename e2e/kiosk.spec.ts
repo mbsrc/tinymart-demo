@@ -1,4 +1,14 @@
+import type { Page } from "@playwright/test"
 import { expect, test } from "./fixtures"
+
+/** Navigate through idle → card_entry → shopping */
+async function startShopping(page: Page, storeId: string) {
+  await page.goto(`/kiosk/${storeId}`)
+  await page.getByRole("button", { name: /tap to start/i }).click()
+  // Card entry skip screen (no Stripe key in E2E)
+  await page.getByRole("button", { name: /continue to shopping/i }).click()
+  await expect(page.getByRole("heading", { name: "Your Cart" })).toBeVisible()
+}
 
 test.describe("Kiosk shopping flow", () => {
   test("shows store name and Tap to Start", async ({ page, storeId }) => {
@@ -8,18 +18,14 @@ test.describe("Kiosk shopping flow", () => {
   })
 
   test("tap start shows product grid and empty cart", async ({ page, storeId }) => {
-    await page.goto(`/kiosk/${storeId}`)
-    await page.getByRole("button", { name: /tap to start/i }).click()
-    await expect(page.getByRole("heading", { name: "Your Cart" })).toBeVisible()
+    await startShopping(page, storeId)
     await expect(page.getByText("Your cart is empty")).toBeVisible()
     // Product grid should show at least one product
     await expect(page.getByText("Bottled Water")).toBeVisible()
   })
 
   test("add product to cart updates sidebar", async ({ page, storeId }) => {
-    await page.goto(`/kiosk/${storeId}`)
-    await page.getByRole("button", { name: /tap to start/i }).click()
-    await expect(page.getByRole("heading", { name: "Your Cart" })).toBeVisible()
+    await startShopping(page, storeId)
 
     // Click a product to add it
     await page.getByRole("button", { name: /bottled water/i }).click()
@@ -31,9 +37,7 @@ test.describe("Kiosk shopping flow", () => {
   })
 
   test("adding same product increments quantity", async ({ page, storeId }) => {
-    await page.goto(`/kiosk/${storeId}`)
-    await page.getByRole("button", { name: /tap to start/i }).click()
-    await expect(page.getByRole("heading", { name: "Your Cart" })).toBeVisible()
+    await startShopping(page, storeId)
 
     // Add same product twice
     await page.getByRole("button", { name: /bottled water/i }).click()
@@ -48,9 +52,7 @@ test.describe("Kiosk shopping flow", () => {
   })
 
   test("cart plus button increments quantity", async ({ page, storeId }) => {
-    await page.goto(`/kiosk/${storeId}`)
-    await page.getByRole("button", { name: /tap to start/i }).click()
-    await expect(page.getByRole("heading", { name: "Your Cart" })).toBeVisible()
+    await startShopping(page, storeId)
 
     await page.getByRole("button", { name: /bottled water/i }).click()
     const cartSection = page.locator(".border-l")
@@ -62,9 +64,7 @@ test.describe("Kiosk shopping flow", () => {
   })
 
   test("cart minus button decrements quantity", async ({ page, storeId }) => {
-    await page.goto(`/kiosk/${storeId}`)
-    await page.getByRole("button", { name: /tap to start/i }).click()
-    await expect(page.getByRole("heading", { name: "Your Cart" })).toBeVisible()
+    await startShopping(page, storeId)
 
     // Add product twice via grid
     await page.getByRole("button", { name: /bottled water/i }).click()
@@ -79,10 +79,8 @@ test.describe("Kiosk shopping flow", () => {
     await expect(cartSection.getByText("1")).toBeVisible()
   })
 
-  test("removing last item empties cart and disables close button", async ({ page, storeId }) => {
-    await page.goto(`/kiosk/${storeId}`)
-    await page.getByRole("button", { name: /tap to start/i }).click()
-    await expect(page.getByRole("heading", { name: "Your Cart" })).toBeVisible()
+  test("removing last item empties cart and shows Close Door", async ({ page, storeId }) => {
+    await startShopping(page, storeId)
 
     await page.getByRole("button", { name: /bottled water/i }).click()
     const cartSection = page.locator(".border-l")
@@ -92,14 +90,14 @@ test.describe("Kiosk shopping flow", () => {
     await cartSection.getByRole("button", { name: "-" }).click()
     await expect(page.getByText("Your cart is empty")).toBeVisible()
 
-    // Close button should be disabled
-    await expect(page.getByRole("button", { name: /close door/i })).toBeDisabled()
+    // Button reverts to "Close Door" (no "& Pay") and stays enabled
+    const closeBtn = page.getByRole("button", { name: /close door/i })
+    await expect(closeBtn).toBeVisible()
+    await expect(closeBtn).not.toBeDisabled()
   })
 
   test("full checkout flow: add items → close → receipt", async ({ page, storeId }) => {
-    await page.goto(`/kiosk/${storeId}`)
-    await page.getByRole("button", { name: /tap to start/i }).click()
-    await expect(page.getByRole("heading", { name: "Your Cart" })).toBeVisible()
+    await startShopping(page, storeId)
 
     // Add two different products
     await page.getByRole("button", { name: /bottled water/i }).click()
@@ -120,9 +118,7 @@ test.describe("Kiosk shopping flow", () => {
   })
 
   test("receipt total is correct", async ({ page, storeId }) => {
-    await page.goto(`/kiosk/${storeId}`)
-    await page.getByRole("button", { name: /tap to start/i }).click()
-    await expect(page.getByRole("heading", { name: "Your Cart" })).toBeVisible()
+    await startShopping(page, storeId)
 
     // Add Bottled Water ($1.99) and Energy Bar ($1.99)
     await page.getByRole("button", { name: /bottled water/i }).click()
@@ -139,9 +135,7 @@ test.describe("Kiosk shopping flow", () => {
   })
 
   test("new session returns to idle", async ({ page, storeId }) => {
-    await page.goto(`/kiosk/${storeId}`)
-    await page.getByRole("button", { name: /tap to start/i }).click()
-    await expect(page.getByRole("heading", { name: "Your Cart" })).toBeVisible()
+    await startShopping(page, storeId)
 
     // Quick checkout
     await page.getByRole("button", { name: /bottled water/i }).click()
@@ -165,18 +159,14 @@ test.describe("Kiosk shopping flow", () => {
   })
 
   test("dashboard link works from shopping phase", async ({ page, storeId }) => {
-    await page.goto(`/kiosk/${storeId}`)
-    await page.getByRole("button", { name: /tap to start/i }).click()
-    await expect(page.getByRole("heading", { name: "Your Cart" })).toBeVisible()
+    await startShopping(page, storeId)
 
     await page.getByRole("link", { name: /dashboard/i }).click()
     await expect(page).toHaveURL("/")
   })
 
   test("multiple products from different categories display", async ({ page, storeId }) => {
-    await page.goto(`/kiosk/${storeId}`)
-    await page.getByRole("button", { name: /tap to start/i }).click()
-    await expect(page.getByRole("heading", { name: "Your Cart" })).toBeVisible()
+    await startShopping(page, storeId)
 
     // Check products from each category exist
     await expect(page.getByText("Bottled Water")).toBeVisible() // fridge
@@ -184,10 +174,12 @@ test.describe("Kiosk shopping flow", () => {
     await expect(page.getByText("Ice Cream Bar")).toBeVisible() // freezer
   })
 
-  test("close door button disabled when cart is empty", async ({ page, storeId }) => {
-    await page.goto(`/kiosk/${storeId}`)
-    await page.getByRole("button", { name: /tap to start/i }).click()
+  test("close door button enabled when cart is empty", async ({ page, storeId }) => {
+    await startShopping(page, storeId)
     await expect(page.getByText("Your cart is empty")).toBeVisible()
-    await expect(page.getByRole("button", { name: /close door & pay/i })).toBeDisabled()
+    // Empty cart shows "Close Door" (not "& Pay"), enabled — user can close without buying
+    const closeBtn = page.getByRole("button", { name: /close door/i })
+    await expect(closeBtn).toBeVisible()
+    await expect(closeBtn).not.toBeDisabled()
   })
 })
