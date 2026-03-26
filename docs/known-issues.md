@@ -1,6 +1,6 @@
 # Known Issues
 
-## Pre-Production Reliability Audit (2026-03-24)
+## Pre-Production Reliability Audit (2026-03-24, reviewed 2026-03-25)
 
 Systematic review of every file in `src/` covering error handling, data integrity,
 external service resilience, payment safety, database performance, async/job safety,
@@ -23,7 +23,7 @@ observability, and security.
 
 ### [CRITICAL] Double-close race condition on session close
 
-**File:** `src/routes/sessions.ts:130-138`
+**File:** `src/routes/sessions.ts:165-167`
 **Issue:** The `status !== "open"` guard runs OUTSIDE the database transaction. Two concurrent `POST /:id/close` requests can both read the session as "open", both pass the guard, and both enter the transaction block — resulting in double inventory deduction and double Stripe charges.
 **Impact:** Customers charged twice for the same session. Inventory deducted twice.
 **Fix:** Acquire a `SELECT ... FOR UPDATE` lock on the session row at the start of the transaction, then re-check status inside the transaction. Alternatively, add optimistic locking (version column) to the Session model and check it in the UPDATE.
@@ -32,26 +32,26 @@ observability, and security.
 
 ### [CRITICAL] Inventory deductions are NOT atomic with session close
 
-**File:** `src/routes/sessions.ts:191-201` and `src/services/inventory.ts:39`
-**Issue:** The comment says "all-or-nothing" but `adjustInventory()` opens its own `sequelize.transaction()` internally. The inventory deductions commit independently from the outer transaction `t`. If the Stripe call or `session.update()` fails, the outer transaction rolls back the `Transaction.create` and session status change — but the inventory has already been permanently deducted.
+**File:** `src/routes/sessions.ts:224-234` and `src/services/inventory.ts:39`
+**Issue:** The comment says "all-or-nothing" but `adjustInventory()` opens its own `sequelize.transaction()` internally. The inventory deductions commit independently from the outer transaction `t`. If the Stripe capture or `session.update()` fails, the outer transaction rolls back the `Transaction.create` and session status change — but the inventory has already been permanently deducted.
 **Impact:** Inventory phantom deductions on failed charges. Stock counts drift lower over time with no compensation.
 **Fix:** Pass the outer transaction `t` into `adjustInventory()` as an optional parameter so all mutations happen in a single transaction. Add a `transaction` option to the `AdjustInventoryParams` interface.
 
 ---
 
-### [CRITICAL] No Stripe idempotency keys on payment creation
+### [CRITICAL] No Stripe idempotency keys on payment calls
 
-**File:** `src/services/stripe.ts:28` and `src/services/deferredCharge.ts:29,84`
-**Issue:** `createPaymentIntent` wraps the Stripe call in retry logic (up to 3 retries), but never passes an idempotency key to Stripe. If a network timeout occurs after Stripe processes the request but before the response arrives, the retry creates a second PaymentIntent. The same applies to deferred charge processing.
-**Impact:** Duplicate Stripe charges. Real money lost.
-**Fix:** Generate a UUID-based idempotency key per call and pass it as the second argument: `stripe.paymentIntents.create(params, { idempotencyKey })`. For deferred charges, use `deferred_charge.id` as the idempotency key.
+**File:** `src/services/stripe.ts:28,35` and `src/services/deferredCharge.ts:25,91`
+**Issue:** `createPaymentIntent` and `capturePaymentIntent` wrap Stripe calls in retry logic (up to 3 retries), but never pass an idempotency key to Stripe. If a network timeout occurs after Stripe processes the request but before the response arrives, the retry creates a duplicate operation. The same applies to deferred charge processing.
+**Impact:** Duplicate Stripe charges or captures. Real money lost.
+**Fix:** Generate a UUID-based idempotency key per call and pass it as the second argument: `stripe.paymentIntents.create(params, { idempotencyKey })`. For deferred charges, use `deferred_charge.id` as the idempotency key. For captures, use the session ID.
 
 ---
 
 ### [CRITICAL] Session marked "failed" when charge is deferred
 
-**File:** `src/routes/sessions.ts:210`
-**Issue:** `const sessionStatus = chargeResult.outcome === "charged" ? "charged" : "failed"` — when Stripe is down and the charge is deferred, the session is marked "failed" even though items were taken and the charge is pending.
+**File:** `src/routes/sessions.ts:263`
+**Issue:** `status: captureSucceeded ? "charged" : "failed"` — when Stripe is down and `captureOrDefer()` returns `outcome: "deferred"`, the session is marked "failed" even though items were taken and the charge is pending.
 **Impact:** Customer sees a "failed" session despite items being removed from the fridge and inventory being deducted. If the deferred charge later succeeds, the session still shows "failed" — no reconciliation updates it. Retry logic checking for "failed" sessions could attempt to re-close them.
 **Fix:** Add a "pending" or "deferred" status to the session, or use "closed" with `charged_at = null`. Update the session status when the deferred charge eventually succeeds or permanently fails.
 
@@ -146,7 +146,7 @@ The `send-receipt` job is enqueued via `safeEnqueue()` after successful session 
 
 ### [INFO] N+1 queries in session close cart detail lookup
 
-**File:** `src/routes/sessions.ts:156-186`
+**File:** `src/routes/sessions.ts:189-219`
 **Issue:** Each cart line triggers a separate `StoreProduct.findOne` query inside `Promise.all`. For a cart with N items, this is N database round-trips.
 **Impact:** Slower session close for large carts.
 **Fix:** Batch into a single query: `StoreProduct.findAll({ where: { store_id, product_id: { [Op.in]: productIds } }, include: [Product] })`.
