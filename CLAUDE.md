@@ -23,6 +23,8 @@ Backend-reliability demo targeting Micromart engineering interviewers.
 - Logging: BetterStack (Logtail)
 - Deployment: Heroku
 - Local Development: Docker + docker-compose.yml
+- Frontend: React 19, Vite, TanStack Query, React Router v7, Tailwind v4
+- Frontend Testing: Playwright (E2E), Testing Library (component)
 
 ## Code Conventions
 - No semicolons, 2-space indentation
@@ -34,6 +36,7 @@ Backend-reliability demo targeting Micromart engineering interviewers.
 ### Planning
 - Save multi-step plans to `docs/plans/` before executing to document key decisions
 - Progress is tracked in `docs/progress.md`. Read it at the start of any multi-step task
+- Before implementing, outline your plan: list each file you'll change, the approach for each, and any assumptions. Wait for my approval before writing code.
 
 ### Git & PR Workflow
 - When creating PRs for stacked branches, always verify the base branch is set to the correct parent branch in the stack, not `main`.
