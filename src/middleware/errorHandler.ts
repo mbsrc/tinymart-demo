@@ -14,6 +14,7 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
       statusCode: err.statusCode,
     })
 
+    // Non operational errors should be logged to Sentry
     if (err.statusCode >= 500) {
       Sentry.captureException(err, {
         tags: { correlation_id: correlationId, code: err.code },
@@ -31,6 +32,7 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
     return
   }
 
+  // Handle unexpected errors
   logger.error(err.message, {
     correlationId,
     stack: err.stack,

@@ -13,7 +13,12 @@ test.describe("Store detail flow", () => {
 
   test("shows store heading and status badge", async ({ page }) => {
     await expect(page.getByRole("heading", { name: /downtown fridge/i })).toBeVisible()
-    await expect(page.getByText("online")).toBeVisible()
+    await expect(
+      page
+        .getByRole("heading", { name: /downtown fridge/i })
+        .locator("..")
+        .getByText("online"),
+    ).toBeVisible()
   })
 
   test("product table shows seeded products", async ({ page }) => {
