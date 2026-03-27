@@ -20,8 +20,8 @@ const products = [
   { name: "Sandwich", sku: "SAN-001", price_cents: 549, category: "fridge" },
 ] as const
 
-const quantities = [15, 20, 12, 8, 18, 10, 14, 6, 9, 11]
-const thresholds = [3, 5, 3, 3, 5, 3, 5, 3, 3, 5]
+const quantities = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+const thresholds = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
 
 const now = new Date()
 

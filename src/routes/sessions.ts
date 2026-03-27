@@ -77,6 +77,7 @@ router.post("/", async (req, res) => {
     store_id,
     stripe_payment_method_id: stripe_payment_method_id ?? null,
     stripe_payment_intent_id: stripePaymentIntentId,
+    idempotency_key: req.idempotencyKey ?? null,
   })
 
   res.status(201).json(envelope(session, buildMeta(req)))
@@ -234,6 +235,7 @@ router.post("/:id/close", async (req, res) => {
         total_cents: totalCents,
         stripe_charge_id: session.stripe_payment_intent_id,
         status: captureSucceeded ? "succeeded" : "pending",
+        idempotency_key: req.idempotencyKey ?? null,
       },
       { transaction: t },
     )
