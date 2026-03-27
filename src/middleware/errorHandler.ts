@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node"
 import type { NextFunction, Request, Response } from "express"
 import { AppError } from "../types/index.js"
 import { errorEnvelope } from "../utils/envelope.js"
@@ -13,6 +14,12 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
       statusCode: err.statusCode,
     })
 
+    if (err.statusCode >= 500) {
+      Sentry.captureException(err, {
+        tags: { correlation_id: correlationId, code: err.code },
+      })
+    }
+
     res
       .status(err.statusCode)
       .json(
@@ -27,6 +34,10 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
   logger.error(err.message, {
     correlationId,
     stack: err.stack,
+  })
+
+  Sentry.captureException(err, {
+    tags: { correlation_id: correlationId },
   })
 
   res

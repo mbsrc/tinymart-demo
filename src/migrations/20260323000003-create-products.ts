@@ -59,6 +59,9 @@ export default {
   async down(queryInterface: QueryInterface) {
     await queryInterface.sequelize.transaction(async (transaction) => {
       await queryInterface.dropTable("products", { transaction })
+      await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_products_category"', {
+        transaction,
+      })
     })
   },
 }

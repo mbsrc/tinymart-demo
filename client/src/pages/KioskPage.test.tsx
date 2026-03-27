@@ -138,12 +138,12 @@ describe("KioskPage", () => {
       })
     })
 
-    it("disables close button when cart is empty", async () => {
+    it("enables close button when cart is empty", async () => {
       const user = userEvent.setup()
       renderKiosk()
       await startSession(user)
 
-      expect(screen.getByRole("button", { name: /close door & pay/i })).toBeDisabled()
+      expect(screen.getByRole("button", { name: /close door/i })).not.toBeDisabled()
     })
 
     it("shows store name in header during shopping", async () => {
@@ -207,7 +207,7 @@ describe("KioskPage", () => {
       })
     })
 
-    it("disables close button after removing all items", async () => {
+    it("shows close door button after removing all items", async () => {
       const user = userEvent.setup()
       renderKiosk()
       await startSession(user)
@@ -217,9 +217,10 @@ describe("KioskPage", () => {
       const removeBtn = screen.getByRole("button", { name: "-" })
       await user.click(removeBtn)
 
-      // Close button should be disabled again
+      // Button reverts to "Close Door" (no & Pay) and stays enabled
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /close door & pay/i })).toBeDisabled()
+        const closeBtn = screen.getByRole("button", { name: /close door/i })
+        expect(closeBtn).not.toBeDisabled()
       })
     })
 

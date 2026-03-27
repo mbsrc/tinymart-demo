@@ -1,3 +1,6 @@
+import { initSentry } from "./utils/sentry.js"
+initSentry()
+
 import { app } from "./app.js"
 import { config } from "./config/index.js"
 import { getJobQueue, startJobQueue, stopJobQueue } from "./jobs/queue.js"

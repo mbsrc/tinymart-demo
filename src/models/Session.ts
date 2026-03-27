@@ -8,7 +8,7 @@ type SessionStatus = "open" | "closed" | "charged" | "failed"
 interface SessionAttributes {
   id: string
   store_id: string
-  stripe_customer_id: string | null
+  stripe_payment_method_id: string | null
   stripe_payment_intent_id: string | null
   idempotency_key: string | null
   status: SessionStatus
@@ -32,7 +32,7 @@ type SessionCreationAttributes = Omit<
 class Session extends Model<SessionAttributes, SessionCreationAttributes> {
   declare id: string
   declare store_id: string
-  declare stripe_customer_id: string | null
+  declare stripe_payment_method_id: string | null
   declare stripe_payment_intent_id: string | null
   declare idempotency_key: string | null
   declare status: SessionStatus
@@ -69,7 +69,7 @@ class Session extends Model<SessionAttributes, SessionCreationAttributes> {
           type: DataTypes.UUID,
           allowNull: false,
         },
-        stripe_customer_id: {
+        stripe_payment_method_id: {
           type: DataTypes.STRING,
           allowNull: true,
         },

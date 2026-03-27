@@ -134,7 +134,7 @@ Scenarios:
    - GET `/health/detailed` → 200
    - Verify response contains: `circuit_breakers`, `dependencies`, `uptime`, `memory`
    - Verify `uptime` is a positive number
-   - Verify `memory.rss` and `memory.heapUsed` are positive numbers
+   - Verify `memory.rss` and `memory.heap_used` are positive numbers
 
 4. **Correlation ID round-trip**
    - Send request with `X-Correlation-ID: test-123`

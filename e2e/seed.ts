@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url"
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(dirname, "..")
 
-process.env.DATABASE_URL = "postgresql://tinymart:tinymart@localhost:5433/tinymart_e2e"
+process.env.DATABASE_URL = "postgresql://tinymart:tinymart@localhost:5432/tinymart_e2e"
 process.env.STRIPE_SECRET_KEY = "sk_test_fake_e2e_key"
 process.env.PORT = "3001"
 process.env.NODE_ENV = "test"

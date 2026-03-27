@@ -4,12 +4,8 @@ import { v4 as uuid } from "uuid"
 const operatorId = uuid()
 const store1Id = uuid()
 const store2Id = uuid()
-const sessionId = uuid()
 
 const productIds = Array.from({ length: 10 }, () => uuid())
-const waterProductId = productIds[0] as string
-const colaProductId = productIds[1] as string
-const energyBarProductId = productIds[4] as string
 
 const products = [
   { name: "Bottled Water", sku: "WAT-001", price_cents: 199, category: "fridge" },
@@ -24,13 +20,19 @@ const products = [
   { name: "Sandwich", sku: "SAN-001", price_cents: 549, category: "fridge" },
 ] as const
 
-const quantities = [15, 20, 12, 8, 18, 10, 14, 6, 9, 11]
-const thresholds = [3, 5, 3, 3, 5, 3, 5, 3, 3, 5]
+const quantities = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+const thresholds = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
 
 const now = new Date()
 
 export default {
   async up(queryInterface: QueryInterface) {
+    // Idempotency: skip if the demo operator already exists
+    const [existing] = await queryInterface.sequelize.query(
+      "SELECT id FROM operators WHERE email = 'demo@tinymart.dev' LIMIT 1",
+    )
+    if ((existing as unknown[]).length > 0) return
+
     await queryInterface.bulkInsert("operators", [
       {
         id: operatorId,
@@ -87,96 +89,29 @@ export default {
         product_id: productId,
         quantity_on_hand: quantities[i],
         low_stock_threshold: thresholds[i],
+        version: 0,
         created_at: now,
         updated_at: now,
       })),
     )
     await queryInterface.bulkInsert("store_products", storeProducts)
-
-    // Sample completed session at Downtown Fridge
-    const openedAt = new Date(now.getTime() - 10 * 60_000)
-    const closedAt = new Date(now.getTime() - 5 * 60_000)
-    const chargedAt = new Date(now.getTime() - 4 * 60_000)
-
-    await queryInterface.bulkInsert("sessions", [
-      {
-        id: sessionId,
-        store_id: store1Id,
-        stripe_customer_id: "cus_demo_123",
-        stripe_payment_intent_id: "pi_demo_123",
-        idempotency_key: uuid(),
-        status: "charged",
-        opened_at: openedAt,
-        closed_at: closedAt,
-        charged_at: chargedAt,
-        created_at: openedAt,
-        updated_at: chargedAt,
-      },
-    ])
-
-    // 3 items added, 1 removed (Cola added then removed)
-    await queryInterface.bulkInsert("session_items", [
-      {
-        id: uuid(),
-        session_id: sessionId,
-        product_id: waterProductId, // Bottled Water — added
-        action: "added",
-        timestamp: new Date(openedAt.getTime() + 30_000),
-        created_at: now,
-        updated_at: now,
-      },
-      {
-        id: uuid(),
-        session_id: sessionId,
-        product_id: colaProductId, // Cola — added
-        action: "added",
-        timestamp: new Date(openedAt.getTime() + 60_000),
-        created_at: now,
-        updated_at: now,
-      },
-      {
-        id: uuid(),
-        session_id: sessionId,
-        product_id: colaProductId, // Cola — removed
-        action: "removed",
-        timestamp: new Date(openedAt.getTime() + 90_000),
-        created_at: now,
-        updated_at: now,
-      },
-      {
-        id: uuid(),
-        session_id: sessionId,
-        product_id: energyBarProductId, // Energy Bar — added
-        action: "added",
-        timestamp: new Date(openedAt.getTime() + 120_000),
-        created_at: now,
-        updated_at: now,
-      },
-    ])
-
-    // Net: Bottled Water (199) + Energy Bar (199) = 398 cents
-    await queryInterface.bulkInsert("transactions", [
-      {
-        id: uuid(),
-        session_id: sessionId,
-        store_id: store1Id,
-        total_cents: 398,
-        stripe_charge_id: "ch_demo_123",
-        idempotency_key: uuid(),
-        status: "succeeded",
-        created_at: chargedAt,
-        updated_at: chargedAt,
-      },
-    ])
   },
 
   async down(queryInterface: QueryInterface) {
-    await queryInterface.bulkDelete("transactions", {})
-    await queryInterface.bulkDelete("session_items", {})
-    await queryInterface.bulkDelete("sessions", {})
-    await queryInterface.bulkDelete("store_products", {})
-    await queryInterface.bulkDelete("products", {})
-    await queryInterface.bulkDelete("stores", {})
-    await queryInterface.bulkDelete("operators", {})
+    const [rows] = await queryInterface.sequelize.query(
+      "SELECT id FROM operators WHERE email = 'demo@tinymart.dev' LIMIT 1",
+    )
+    const operators = rows as { id: string }[]
+    const firstOperator = operators[0]
+    if (!firstOperator) return
+    const opId = firstOperator.id
+
+    // Delete in reverse dependency order, scoped to the demo operator
+    await queryInterface.sequelize.query(
+      `DELETE FROM store_products WHERE store_id IN (SELECT id FROM stores WHERE operator_id = '${opId}')`,
+    )
+    await queryInterface.sequelize.query(`DELETE FROM products WHERE operator_id = '${opId}'`)
+    await queryInterface.sequelize.query(`DELETE FROM stores WHERE operator_id = '${opId}'`)
+    await queryInterface.sequelize.query(`DELETE FROM operators WHERE id = '${opId}'`)
   },
 }

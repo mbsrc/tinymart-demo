@@ -8,7 +8,9 @@ dist/
 *.tsbuildinfo
 *.log
 .claude/settings.local.json
+.claude/agent-memory/
 e2e/test-results/
 e2e/playwright-report/
 e2e/.test-data.json
 .mcp.json
+.claude/worktrees/

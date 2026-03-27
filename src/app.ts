@@ -1,4 +1,5 @@
 import path from "node:path"
+import * as Sentry from "@sentry/node"
 import cors from "cors"
 import express from "express"
 import helmet from "helmet"
@@ -24,6 +25,11 @@ app.use(helmet())
 
 // 2. Trust proxy — must precede rate limiter
 app.set("trust proxy", 1)
+
+// Express v5 changed the default query parser to "extended" (qs), which returns
+// nested objects. "simple" uses Node's built-in querystring module and returns a
+// plain object, preserving the v4 behavior all routes rely on.
+app.set("query parser", "simple")
 
 // 3. CORS
 app.use(
@@ -69,7 +75,10 @@ if (config.nodeEnv === "production") {
 // 12. 404 handler (3-arg)
 app.use(notFound)
 
-// 12. Error handler (4-arg) — always last
+// 13. Sentry error handler — captures unexpected errors with full request context
+Sentry.setupExpressErrorHandler(app)
+
+// 14. Error handler (4-arg) — always last
 app.use(errorHandler)
 
 export { app }

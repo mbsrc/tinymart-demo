@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import request from "supertest"
-import { app } from "../../src/app.js"
-import { Operator, sequelize } from "../../src/models/index.js"
+import { app } from "../src/app.js"
+import { Operator, sequelize } from "../src/models/index.js"
 
 export { app, request, sequelize }
 

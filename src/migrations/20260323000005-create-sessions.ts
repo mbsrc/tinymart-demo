@@ -69,6 +69,9 @@ export default {
   async down(queryInterface: QueryInterface) {
     await queryInterface.sequelize.transaction(async (transaction) => {
       await queryInterface.dropTable("sessions", { transaction })
+      await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_sessions_status"', {
+        transaction,
+      })
     })
   },
 }

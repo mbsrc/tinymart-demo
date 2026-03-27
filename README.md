@@ -208,7 +208,7 @@ The same ID appears in the response header (`X-Correlation-ID`), the response bo
 
 ## 🗃️ Data Model
 
-13 tables in 3 categories:
+12 tables in 3 categories:
 
 **Core** — `operators`, `stores`, `products`, `store_products`
 Operators own stores. Stores stock products via `store_products` (quantity, low-stock threshold, optimistic lock version).
@@ -303,11 +303,11 @@ Every response uses a consistent envelope:
 
 ```bash
 bun run test              # backend tests (Vitest + Supertest)
-bun run test:ui           # frontend tests (Vitest + React Testing Library)
+bun run test:client       # frontend tests (Vitest + React Testing Library)
 bun run test:pw           # end-to-end tests (Playwright)
 ```
 
-**Backend:** 221 tests across 24 test files covering middleware, routes, services, models, and reliability patterns.
+**Backend:** 187 tests across 19 test files covering middleware, routes, services, models, and reliability patterns.
 **Frontend:** 130 UI tests (Vitest + React Testing Library + MSW) covering all pages and components.
 **E2E:** 5 Playwright specs covering auth, dashboard, store detail, kiosk checkout, and health page.
 
@@ -352,13 +352,15 @@ client/
     pages/                 Dashboard, StoreDetail, Transactions, Kiosk, Health
     types/                 Frontend TypeScript types
     utils/                 Formatting, cart reconciliation
-tests/                     24 backend test files (Vitest + Supertest)
+tests/                     19 backend test files (Vitest + Supertest)
 e2e/                       5 Playwright specs + fixtures
 load-tests/                k6 load test scripts
 docs/
   tinymart-prd.md          Product requirements document
-  plans/                   Implementation plans for each phase
-  progress.md              Phase tracking
+  todo.md                  Active backlog
+  shopping-flow.md         Kiosk shopping lifecycle reference
+  operator-flows.md        Operator dashboard flows reference
+  archive/                 Historical plans and progress tracking
 ```
 
 ---
@@ -371,7 +373,7 @@ docs/
 | `bun run build` | Compile TypeScript + build frontend |
 | `bun run start` | Run production build |
 | `bun run test` | Run backend tests |
-| `bun run test:ui` | Run frontend tests |
+| `bun run test:client` | Run frontend tests |
 | `bun run test:pw` | Run Playwright E2E tests |
 | `bun run lint` | Lint and auto-format (Biome) |
 | `bun run db:up` | Start PostgreSQL container |

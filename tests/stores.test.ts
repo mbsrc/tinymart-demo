@@ -195,4 +195,40 @@ describe("Stores API", () => {
     expect(res.status).toBe(404)
     expect(res.body.error.code).toBe("STORE_PRODUCT_NOT_FOUND")
   })
+
+  it("POST /api/stores/:id/products rejects adding to another operators store", async () => {
+    // Create a store owned by other operator
+    const otherStore = await request(app)
+      .post("/api/stores")
+      .set("x-api-key", otherApiKey)
+      .set("idempotency-key", randomUUID())
+      .send({ name: "Other Op Store" })
+
+    expect(otherStore.status).toBe(201)
+
+    // Operator A tries to add their product to Other Op's store
+    const res = await request(app)
+      .post(`/api/stores/${otherStore.body.data.id}/products`)
+      .set("x-api-key", apiKey)
+      .set("idempotency-key", randomUUID())
+      .send({ product_id: productId, quantity_on_hand: 5 })
+
+    expect(res.status).toBe(404)
+  })
+
+  it("GET /api/stores/:id/products/:productId/events returns 404 for other operators store", async () => {
+    // Restock existing product to generate events
+    await request(app)
+      .patch(`/api/stores/${storeId}/products/${productId}`)
+      .set("x-api-key", apiKey)
+      .set("idempotency-key", randomUUID())
+      .send({ quantity_on_hand: 20 })
+
+    // Other operator tries to read events
+    const res = await request(app)
+      .get(`/api/stores/${storeId}/products/${productId}/events`)
+      .set("x-api-key", otherApiKey)
+
+    expect(res.status).toBe(404)
+  })
 })

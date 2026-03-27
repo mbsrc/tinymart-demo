@@ -15,7 +15,7 @@ TinyMart's backend is complete — all V1 features, V2 reliability hardening, e2
 - **Dev mode:** Vite on `:5173` proxies `/api/*` and `/health*` to backend on `:3001`, coordinated via `concurrently`
 - **Production:** `vite build` outputs to `dist/client/`, Express serves via `express.static()` + SPA catch-all
 - **Auth:** Operator pastes API key into a prompt, stored in localStorage. Kiosk/health pages are public (no key needed)
-- **No Stripe Elements** — card entry is skipped for this demo (test mode, `chargeOrDefer` handles it server-side)
+- **Stripe Elements** — card entry via Stripe Elements (CardElement) in the kiosk. Pre-authorizes on session open, captures on close via `captureOrDefer`
 
 ## Sub-steps
 

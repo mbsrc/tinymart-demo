@@ -96,7 +96,7 @@ export class DependencyRegistry {
           error: error instanceof Error ? error.message : String(error),
         })
       })
-    }, intervalMs)
+    }, intervalMs).unref()
 
     // Run an initial check immediately
     this.checkAll().catch(() => {})

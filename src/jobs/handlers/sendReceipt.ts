@@ -46,7 +46,17 @@ async function processReceipt(job: Job<SendReceiptPayload>): Promise<void> {
 
 export async function handleSendReceipt(jobs: Job<SendReceiptPayload>[]): Promise<void> {
   for (const job of jobs) {
-    await processReceipt(job)
+    try {
+      await processReceipt(job)
+    } catch (error) {
+      await recordJobFailure(
+        "send-receipt",
+        job.data as unknown as Record<string, unknown>,
+        error,
+        0,
+      )
+      throw error
+    }
   }
 }
 

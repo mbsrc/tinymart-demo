@@ -1,4 +1,5 @@
 import { Logtail } from "@logtail/node"
+import * as Sentry from "@sentry/node"
 import { config } from "../config/index.js"
 
 interface LogContext {
@@ -12,7 +13,9 @@ interface Logger {
 }
 
 function createLogger(): Logger {
-  const logtail = config.betterStackSourceToken ? new Logtail(config.betterStackSourceToken) : null
+  const logtail = config.betterStackSourceToken
+    ? new Logtail(config.betterStackSourceToken, { endpoint: config.betterStackIngestingHost })
+    : null
 
   function log(level: "info" | "warn" | "error", message: string, context?: LogContext): void {
     const entry = {
@@ -33,6 +36,12 @@ function createLogger(): Logger {
     if (logtail) {
       logtail[level](message, context).catch(() => {})
     }
+
+    Sentry.addBreadcrumb({
+      message,
+      level: level === "error" ? "error" : level === "warn" ? "warning" : "info",
+      data: context,
+    })
   }
 
   return {

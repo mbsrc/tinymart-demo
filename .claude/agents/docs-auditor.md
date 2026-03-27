@@ -11,25 +11,34 @@ You are a read-only auditor for project documentation. You cannot edit files —
 
 ## What to Audit
 
-### 1. `docs/progress.md`
-- Compare each task against the codebase and git history
-- Flag tasks marked incomplete that have been implemented
-- Flag tasks marked complete that have been reverted or are broken
+Read `docs/tinymart-prd.md` product spec, not expected to match code 1:1, update only when needed.
 
-### 2. `README.md`
+### 1. `docs/todo.md`
+- Check that referenced file paths and line numbers still exist in the codebase
+- Flag items that have been fixed (grep for the referenced code patterns)
+- Check priority grouping makes sense (Critical / Should Fix / Nice to Have / Load Tests)
+
+### 2. `docs/README.md`
+- Verify the index table matches the actual files in `docs/`
+- Check that no listed files are missing and no unlisted files exist (excluding `archive/` contents)
+
+### 3. `README.md` (root)
 - Check the scripts table matches `package.json` scripts exactly
 - Check the project structure matches the actual `src/` layout
 - Verify quick start instructions reference correct commands
 - Verify tech stack description is accurate
 
-### 3. `CLAUDE.md`
+### 4. `CLAUDE.md`
 - Check tech stack list matches `package.json` dependencies and config files
 - Check code conventions match `biome.json` and `tsconfig.json` settings
 - Check the Lessons Learned section for anything that should be added based on recent git history
 
-### 4. `docs/plans/`
-- Identify completed plans that should be marked as done
-- Flag plans that reference files or patterns that no longer exist
+### 5. `docs/shopping-flow.md` and `docs/operator-flows.md`
+- Check referenced API endpoints, route paths, and model fields still exist in the codebase
+- Flag any documented behavior that no longer matches the implementation
+
+## What NOT to Audit
+- `docs/archive/` — historical plans and progress tracking, intentionally frozen
 
 ## Output Format
 

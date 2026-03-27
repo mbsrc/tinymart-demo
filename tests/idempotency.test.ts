@@ -215,4 +215,70 @@ describe("Idempotency Middleware", () => {
     expect(second.status).toBe(201)
     expect(second.body.data.id).toBe(first.body.data.id)
   })
+
+  describe("PATCH is also idempotent", () => {
+    let storeId: string
+    let productId: string
+    const patchKey = randomUUID()
+
+    it("sets up a store with a product", async () => {
+      const prodRes = await request(app)
+        .post("/api/products")
+        .set("x-api-key", apiKey)
+        .set("idempotency-key", randomUUID())
+        .send({ name: "Patch Idem", sku: "PID-001", price_cents: 300, category: "fridge" })
+
+      expect(prodRes.status).toBe(201)
+      productId = prodRes.body.data.id
+
+      const storeRes = await request(app)
+        .post("/api/stores")
+        .set("x-api-key", apiKey)
+        .set("idempotency-key", randomUUID())
+        .send({ name: "Patch Idem Store" })
+
+      expect(storeRes.status).toBe(201)
+      storeId = storeRes.body.data.id
+
+      const addRes = await request(app)
+        .post(`/api/stores/${storeId}/products`)
+        .set("x-api-key", apiKey)
+        .set("idempotency-key", randomUUID())
+        .send({ product_id: productId, quantity_on_hand: 10 })
+
+      expect(addRes.status).toBe(201)
+    })
+
+    it("first PATCH restocks to 25", async () => {
+      const res = await request(app)
+        .patch(`/api/stores/${storeId}/products/${productId}`)
+        .set("x-api-key", apiKey)
+        .set("idempotency-key", patchKey)
+        .send({ quantity_on_hand: 25 })
+
+      expect(res.status).toBe(200)
+      expect(res.body.data.quantity_on_hand).toBe(25)
+    })
+
+    it("replay with same key returns cached response", async () => {
+      const res = await request(app)
+        .patch(`/api/stores/${storeId}/products/${productId}`)
+        .set("x-api-key", apiKey)
+        .set("idempotency-key", patchKey)
+        .send({ quantity_on_hand: 25 })
+
+      expect(res.status).toBe(200)
+      expect(res.body.data.quantity_on_hand).toBe(25)
+    })
+
+    it("quantity only changed once (version still 1)", async () => {
+      const res = await request(app).get(`/api/stores/${storeId}`).set("x-api-key", apiKey)
+
+      const sp = res.body.data.StoreProducts.find(
+        (s: Record<string, unknown>) => s.product_id === productId,
+      )
+      expect(sp.quantity_on_hand).toBe(25)
+      expect(sp.version).toBe(1)
+    })
+  })
 })

@@ -4,7 +4,7 @@ import { DeferredCharge } from "../src/models/DeferredCharge.js"
 import { sequelize } from "../src/models/index.js"
 import { stripeCircuitBreaker } from "../src/services/stripe.js"
 
-// Mock createPaymentIntent
+// Mock capturePaymentIntent
 vi.mock("../src/services/stripe.js", async () => {
   const { CircuitBreaker } = await import("../src/utils/circuitBreaker.js")
   return {
@@ -14,14 +14,14 @@ vi.mock("../src/services/stripe.js", async () => {
       resetTimeoutMs: 1000,
       halfOpenMaxAttempts: 1,
     }),
-    createPaymentIntent: vi.fn(),
+    capturePaymentIntent: vi.fn(),
   }
 })
 
-import { chargeOrDefer, processDeferredCharges } from "../src/services/deferredCharge.js"
-import { createPaymentIntent } from "../src/services/stripe.js"
+import { captureOrDefer, processDeferredCharges } from "../src/services/deferredCharge.js"
+import { capturePaymentIntent } from "../src/services/stripe.js"
 
-const mockedCreate = vi.mocked(createPaymentIntent)
+const mockedCapture = vi.mocked(capturePaymentIntent)
 
 beforeAll(async () => {
   await sequelize.sync({ force: true })
@@ -36,24 +36,20 @@ afterAll(async () => {
   await sequelize.close()
 })
 
-describe("chargeOrDefer", () => {
-  it("charges directly when circuit is closed", async () => {
-    mockedCreate.mockResolvedValue({ id: "pi_123" } as never)
+describe("captureOrDefer", () => {
+  it("captures directly when circuit is closed", async () => {
+    mockedCapture.mockResolvedValue({ id: "pi_123" } as never)
 
-    const result = await chargeOrDefer(randomUUID(), {
-      amount: 500,
-      currency: "usd",
-    })
+    const result = await captureOrDefer(randomUUID(), "pi_123", 500)
 
-    expect(result.outcome).toBe("charged")
-    expect(result.paymentIntent).toEqual({ id: "pi_123" })
-    expect(mockedCreate).toHaveBeenCalledOnce()
+    expect(result.outcome).toBe("captured")
+    expect(mockedCapture).toHaveBeenCalledWith("pi_123", { amount_to_capture: 500 })
 
     const deferred = await DeferredCharge.count()
     expect(deferred).toBe(0)
   })
 
-  it("defers charge when circuit is open", async () => {
+  it("defers capture when circuit is open", async () => {
     // Open the circuit by causing failures
     for (let i = 0; i < 2; i++) {
       await stripeCircuitBreaker.execute(() => Promise.reject(new Error("fail"))).catch(() => {})
@@ -61,10 +57,7 @@ describe("chargeOrDefer", () => {
     expect(stripeCircuitBreaker.getState()).toBe("open")
 
     const sessionId = randomUUID()
-    const result = await chargeOrDefer(sessionId, {
-      amount: 1200,
-      currency: "usd",
-    })
+    const result = await captureOrDefer(sessionId, "pi_deferred", 1200)
 
     expect(result.outcome).toBe("deferred")
     expect(result.deferredChargeId).toBeDefined()
@@ -74,6 +67,10 @@ describe("chargeOrDefer", () => {
     expect(deferred[0].session_id).toBe(sessionId)
     expect(deferred[0].amount).toBe(1200)
     expect(deferred[0].status).toBe("pending")
+    expect(deferred[0].stripe_params).toEqual({
+      payment_intent_id: "pi_deferred",
+      amount_to_capture: 1200,
+    })
   })
 })
 
@@ -89,14 +86,14 @@ describe("processDeferredCharges", () => {
     vi.advanceTimersByTime(2000)
     vi.useRealTimers()
 
-    mockedCreate.mockResolvedValue({ id: "pi_456" } as never)
+    mockedCapture.mockResolvedValue({ id: "pi_456" } as never)
 
     const sessionId = randomUUID()
     await DeferredCharge.create({
       session_id: sessionId,
       amount: 800,
       currency: "usd",
-      stripe_params: { amount: 800, currency: "usd" },
+      stripe_params: { payment_intent_id: "pi_456", amount_to_capture: 800 },
     })
 
     // Circuit may be open from prior test — test the appropriate path
@@ -124,14 +121,14 @@ describe("processDeferredCharges", () => {
     const circuitState = stripeCircuitBreaker.getState()
     if (circuitState === "open") return // Can't test this path with open circuit
 
-    mockedCreate.mockRejectedValue(new Error("card_declined"))
+    mockedCapture.mockRejectedValue(new Error("card_declined"))
 
     const sessionId = randomUUID()
     await DeferredCharge.create({
       session_id: sessionId,
       amount: 500,
       currency: "usd",
-      stripe_params: { amount: 500, currency: "usd" },
+      stripe_params: { payment_intent_id: "pi_fail", amount_to_capture: 500 },
     })
 
     const result = await processDeferredCharges()

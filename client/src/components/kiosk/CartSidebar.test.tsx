@@ -25,9 +25,9 @@ describe("CartSidebar", () => {
       expect(screen.getByText("Your cart is empty")).toBeInTheDocument()
     })
 
-    it("disables close button when cart is empty", () => {
+    it("enables close button when cart is empty", () => {
       render(<CartSidebar {...defaultProps} lines={[]} />)
-      expect(screen.getByRole("button", { name: /close door & pay/i })).toBeDisabled()
+      expect(screen.getByRole("button", { name: /close door/i })).not.toBeDisabled()
     })
   })
 

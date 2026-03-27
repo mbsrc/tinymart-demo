@@ -21,6 +21,10 @@
       "description": "BetterStack Logtail source token (optional — falls back to stdout)",
       "required": false
     },
+    "BETTERSTACK_ERRORS_DSN": {
+      "description": "BetterStack error tracking DSN (Sentry-compatible, optional)",
+      "required": false
+    },
     "RATE_LIMIT_WINDOW_MS": {
       "description": "Rate limit window in milliseconds",
       "value": "60000",
