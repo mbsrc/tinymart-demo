@@ -102,8 +102,9 @@ export default {
       "SELECT id FROM operators WHERE email = 'demo@tinymart.dev' LIMIT 1",
     )
     const operators = rows as { id: string }[]
-    if (operators.length === 0) return
-    const opId = operators[0]!.id
+    const firstOperator = operators[0]
+    if (!firstOperator) return
+    const opId = firstOperator.id
 
     // Delete in reverse dependency order, scoped to the demo operator
     await queryInterface.sequelize.query(
