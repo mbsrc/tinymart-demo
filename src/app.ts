@@ -1,4 +1,5 @@
 import path from "node:path"
+import * as Sentry from "@sentry/node"
 import cors from "cors"
 import express from "express"
 import helmet from "helmet"
@@ -74,7 +75,10 @@ if (config.nodeEnv === "production") {
 // 12. 404 handler (3-arg)
 app.use(notFound)
 
-// 12. Error handler (4-arg) — always last
+// 13. Sentry error handler — captures unexpected errors with full request context
+Sentry.setupExpressErrorHandler(app)
+
+// 14. Error handler (4-arg) — always last
 app.use(errorHandler)
 
 export { app }

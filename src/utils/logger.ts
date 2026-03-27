@@ -1,4 +1,5 @@
 import { Logtail } from "@logtail/node"
+import * as Sentry from "@sentry/node"
 import { config } from "../config/index.js"
 
 interface LogContext {
@@ -35,6 +36,12 @@ function createLogger(): Logger {
     if (logtail) {
       logtail[level](message, context).catch(() => {})
     }
+
+    Sentry.addBreadcrumb({
+      message,
+      level: level === "error" ? "error" : level === "warn" ? "warning" : "info",
+      data: context,
+    })
   }
 
   return {

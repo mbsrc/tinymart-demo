@@ -8,6 +8,7 @@ interface Config {
   nodeEnv: string
   betterStackSourceToken: string | undefined
   betterStackIngestingHost: string | undefined
+  betterStackErrorsDsn: string | undefined
   rateLimitWindowMs: number
   rateLimitMaxRequests: number
   corsAllowedOrigins: string[]
@@ -30,6 +31,7 @@ function loadConfig(): Config {
     nodeEnv: requireEnv("NODE_ENV"),
     betterStackSourceToken: process.env.BETTERSTACK_SOURCE_TOKEN,
     betterStackIngestingHost: process.env.BETTERSTACK_INGESTING_HOST,
+    betterStackErrorsDsn: process.env.BETTERSTACK_ERRORS_DSN,
     rateLimitWindowMs: Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000", 10),
     rateLimitMaxRequests: Number.parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "100", 10),
     corsAllowedOrigins: process.env.CORS_ALLOWED_ORIGINS
